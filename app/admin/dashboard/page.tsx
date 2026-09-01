@@ -271,7 +271,6 @@ export default function AdminDashboardPage() {
   // Modals & Settings
   const [isManualModalOpen, setIsManualModalOpen] = useState(false)
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
-  const [currentTime, setCurrentTime] = useState('')
   const [geofenceRadius, setGeofenceRadius] = useState('100')
 
   // Auth Guard
@@ -309,26 +308,6 @@ export default function AdminDashboardPage() {
       }
     }
   }, [router])
-
-  // Lagos Clock Live Update
-  useEffect(() => {
-    const updateTime = () => {
-      const formatted = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Africa/Lagos',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      }).format(new Date())
-      setCurrentTime(formatted)
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   // Logout Handler
   const handleLogout = () => {
@@ -452,7 +431,6 @@ export default function AdminDashboardPage() {
         {/* 2. Top Header Component */}
         <AdminHeader
           activeTab={activeTab}
-          currentTime={currentTime}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onOpenManualModal={() => setIsManualModalOpen(true)}
           onExportCSV={handleExportCSV}
@@ -461,12 +439,12 @@ export default function AdminDashboardPage() {
 
         {/* 3. Main Body Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* Top KPI Stat Cards */}
-          <StatsOverview stats={stats} onNavigateTab={setActiveTab} />
-
           {/* Conditional View Rendering based on active tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Top KPI Stat Cards (Only in Overview) */}
+              <StatsOverview stats={stats} onNavigateTab={setActiveTab} />
+
               <AttendanceTable
                 records={filteredRecords}
                 searchQuery={searchQuery}

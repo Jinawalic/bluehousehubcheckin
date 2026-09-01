@@ -10,11 +10,8 @@ import {
   AlertCircle,
   BarChart3,
   Settings,
-  ExternalLink,
   LogOut,
   X,
-  Building2,
-  ChevronRight,
 } from 'lucide-react'
 import { AdminTab, AdminUser } from './types'
 
@@ -174,24 +171,6 @@ export function AdminSidebar({
                 </button>
               )
             })}
-          </div>
-
-          {/* Quick Actions & Links */}
-          <div className="space-y-1 pt-2">
-            <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Live Kiosk & Portals
-            </div>
-            <Link
-              href="/"
-              target="_blank"
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-slate-600 hover:text-purple-700 hover:bg-purple-50/60 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <Building2 className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
-                <span>Attendance Kiosk Form</span>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 transition-colors" />
-            </Link>
           </div>
         </div>
 

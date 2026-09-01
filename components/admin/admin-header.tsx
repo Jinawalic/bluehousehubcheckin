@@ -3,16 +3,13 @@
 import React from 'react'
 import {
   Menu,
-  Clock,
   PlusCircle,
   Download,
-  ShieldCheck,
 } from 'lucide-react'
 import { AdminTab, AdminUser } from './types'
 
 interface AdminHeaderProps {
   activeTab: AdminTab
-  currentTime: string
   onOpenSidebar: () => void
   onOpenManualModal: () => void
   onExportCSV: () => void
@@ -48,7 +45,6 @@ const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
 
 export function AdminHeader({
   activeTab,
-  currentTime,
   onOpenSidebar,
   onOpenManualModal,
   onExportCSV,
@@ -80,15 +76,8 @@ export function AdminHeader({
           </div>
         </div>
 
-        {/* Right: Actions & Live Clock */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Live Lagos Clock */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/60">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <Clock className="w-3.5 h-3.5 text-purple-600" />
-            <span>{currentTime || 'Africa/Lagos (GMT+1)'}</span>
-          </div>
-
           {/* Quick Action: Export CSV */}
           <button
             type="button"
