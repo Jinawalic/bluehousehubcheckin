@@ -16,8 +16,13 @@ import {
   MessageSquareWarning,
   ShieldCheck,
   Building,
+  UserPlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  StudentRegistrationModal,
+  type StudentRegistrationFormValues,
+} from '@/components/student/student-registration-modal'
 
 // Check-in window (Nigerian time, server clock)
 const OPEN_HOUR = 9
@@ -26,6 +31,7 @@ const CLOSE_HOUR = 18
 const HUB_COORDS = { latitude: 9.88452647721506, longitude: 8.876546119960212 }
 
 type Role = 'student' | 'mentor' | 'corper'
+type StudentRegistrationType = 'private' | 'intern'
 
 interface RoleConfig {
   name: string
@@ -91,6 +97,7 @@ export function CheckInForm() {
   const [timeStatusText, setTimeStatusText] = useState('Check-in is closed for today (closes 6:00 PM).')
   const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false)
   const [isMentorsModalOpen, setIsMentorsModalOpen] = useState(false)
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
 
   // Absence form state
   const [absenceIdentifier, setAbsenceIdentifier] = useState('BHH/')
@@ -182,6 +189,13 @@ export function CheckInForm() {
       }
       setAbsenceIdentifier(newPrefix + suffix)
     }
+  }
+
+  const handleRegistrationSubmit = (values: StudentRegistrationFormValues) => {
+    const selectedMonths = values.studentType === 'private' ? 3 : values.months
+    toast.success(`${values.name} registered successfully.`, {
+      description: `${values.studentType === 'private' ? 'Private student' : 'Intern student'} • ${values.school} • ${selectedMonths} months`,
+    })
   }
 
   const handleCheckIn = async (e?: React.FormEvent) => {
@@ -309,6 +323,18 @@ export function CheckInForm() {
           </div>
 
           {/* Role Switcher Tabs */}
+          <div className="flex items-center justify-between gap-2 mb-4 sm:mb-5">
+            <p className="text-xs sm:text-sm text-slate-600 font-medium">New student? Register here</p>
+            <button
+              type="button"
+              onClick={() => setIsRegistrationModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Register student
+            </button>
+          </div>
+
           <div
             role="tablist"
             aria-label="Select role"
@@ -419,6 +445,12 @@ export function CheckInForm() {
           </form>
         </section>
       </div>
+
+      <StudentRegistrationModal
+        isOpen={isRegistrationModalOpen}
+        onClose={() => setIsRegistrationModalOpen(false)}
+        onSubmit={handleRegistrationSubmit}
+      />
 
       {/* Report Absence Modal */}
       {isAbsenceModalOpen && (
