@@ -6,12 +6,29 @@ import { toast } from 'sonner'
 
 export type StudentRegistrationType = 'private' | 'intern'
 
+export const HUB_TRACKS = [
+  'Back End Development',
+  'Cybersecurity',
+  'Data Analysis',
+  'Data Science',
+  'Digital Marketing',
+  'Front End Development',
+  'Graphics Design',
+  'Product Design',
+  'Project Management',
+  'Social Media Management',
+  'Software Engineering',
+  'UI/UX Design',
+  'Web Development',
+] as const
+
 export interface StudentRegistrationFormValues {
   name: string
   email: string
   phone: string
   studentType: StudentRegistrationType
   school: string
+  track: string
   months: number
 }
 
@@ -27,6 +44,7 @@ const initialForm: StudentRegistrationFormValues = {
   phone: '',
   studentType: 'private',
   school: '',
+  track: HUB_TRACKS[0],
   months: 3,
 }
 
@@ -50,9 +68,9 @@ export function StudentRegistrationModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const { name, email, phone, studentType, school, months } = form
+    const { name, email, phone, studentType, school, track, months } = form
 
-    if (!name.trim() || !email.trim() || !phone.trim() || !school.trim()) {
+    if (!name.trim() || !email.trim() || !phone.trim() || !school.trim() || !track.trim()) {
       toast.error('Please fill in all student registration fields.')
       return
     }
@@ -69,6 +87,7 @@ export function StudentRegistrationModal({
       email: email.trim(),
       phone: phone.trim(),
       school: school.trim(),
+      track: track.trim(),
       months: studentType === 'private' ? 3 : months,
     }
 
@@ -181,6 +200,23 @@ export function StudentRegistrationModal({
                 className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-slate-800 font-medium text-xs sm:text-sm mb-2">
+              Course / track
+            </label>
+            <select
+              value={form.track}
+              onChange={(e) => setForm((prev) => ({ ...prev, track: e.target.value }))}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
+            >
+              {HUB_TRACKS.map((track) => (
+                <option key={track} value={track}>
+                  {track}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
