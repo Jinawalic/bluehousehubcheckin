@@ -418,17 +418,6 @@ export function CheckInForm() {
             </div>
           </form>
         </section>
-
-        {/* Footer Admin Portal Link */}
-        <footer className="mt-6 flex items-center justify-center">
-          <Link
-            href="/admin/login"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-purple-700 bg-white/50 hover:bg-white px-3.5 py-1.5 rounded-full border border-purple-100/60 shadow-xs transition-all active:scale-95"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-            <span>Admin & Operations Portal</span>
-          </Link>
-        </footer>
       </div>
 
       {/* Report Absence Modal */}

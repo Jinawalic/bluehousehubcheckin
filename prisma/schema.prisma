@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Participant {
+  id           String            @id @default(cuid())
+  name         String
+  role         String            // 'student' | 'mentor' | 'corper'
+  identifier   String            @unique // e.g. 'BHH/24/001', 'BHS/24/001', 'PL/24A/1234'
+  track        String            // e.g. 'Full-Stack Web Development', 'Data Science & AI'
+  email        String?
+  phone        String?
+  status       String            @default("active") // 'active' | 'inactive'
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  attendances  Attendance[]
+  absences     AbsenceRequest[]
+
+  @@index([identifier])
+  @@index([role])
+}
+
+model Attendance {
+  id             String       @id @default(cuid())
+  participantId  String?
+  participant    Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  identifier     String
+  name           String
+  role           String       // 'student' | 'mentor' | 'corper'
+  track          String?
+  latitude       Float?
+  longitude      Float?
+  distanceMeters Float        @default(0)
+  status         String       @default("on-time") // 'on-time' | 'late' | 'excused'
+  checkInTime    String       // formatted time e.g. "09:12 AM"
+  date           String       // YYYY-MM-DD e.g. "2026-09-01"
+  timestamp      DateTime     @default(now())
+  notes          String?
+  createdAt      DateTime     @default(now())
+
+  @@index([identifier])
+  @@index([date])
+  @@index([role])
+}
+
+model AbsenceRequest {
+  id            String       @id @default(cuid())
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  identifier    String
+  name          String
+  role          String       // 'student' | 'mentor' | 'corper'
+  reason        String
+  submittedAt   String       // formatted string e.g. "Today, 08:30 AM"
+  status        String       @default("pending") // 'pending' | 'approved' | 'rejected'
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([identifier])
+  @@index([status])
+}
+
+model AdminUser {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String?
+  role       String   @default("Super Administrator")
+  avatar     String?  @default("BH")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
+}
+
+model HubSetting {
+  id             String   @id @default("default")
+  latitude       Float    @default(9.88452647721506)
+  longitude      Float    @default(8.876546119960212)
+  geofenceRadius Int      @default(100)
+  openHour       Int      @default(9)
+  closeHour      Int      @default(18)
+  timezone       String   @default("Africa/Lagos")
+  updatedAt      DateTime @updatedAt
+}
