@@ -1,17 +1,13 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import {
-  ShieldCheck,
   LayoutDashboard,
   UserCheck,
   GraduationCap,
   AlertCircle,
   BarChart3,
   Settings,
-  LogOut,
-  X,
 } from 'lucide-react'
 import { AdminTab, AdminUser } from './types'
 
@@ -82,127 +78,34 @@ export function AdminSidebar({
   }
 
   return (
-    <>
-      {/* Mobile Backdrop Overlay */}
-      {isOpen && (
-        <div
-          onClick={onClose}
-          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs lg:hidden transition-opacity animate-in fade-in duration-200"
-          aria-hidden="true"
-        />
-      )}
+    <nav className="relative z-20 mx-3 rounded-[26px] border border-white/70 bg-[#f0eff9]/90 px-3 py-2 shadow-[0_10px_30px_rgba(93,84,140,0.05)] backdrop-blur-md sm:mx-6 lg:mx-12">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const isActive = activeTab === item.id
 
-      {/* Sidebar Container */}
-      <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-white border-r border-purple-100 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } shadow-[4px_0_24px_rgba(140,90,200,0.06)] lg:shadow-none`}
-      >
-        {/* Top Header & Logo */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <Link href="/admin/dashboard" className="flex items-center gap-3 group select-none">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#9835EA] via-[#BF25D1] to-[#EB4899] flex items-center justify-center shadow-md transition-transform group-hover:scale-105">
-              <ShieldCheck className="w-5 h-5 text-white stroke-[2.2]" />
-            </div>
-            <div>
-              <span className="font-serif font-black text-lg text-slate-900 block leading-tight">
-                Bluehouse Hub
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-100">
-                Admin Command
-              </span>
-            </div>
-          </Link>
-
-          {/* Mobile close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-            aria-label="Close sidebar"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
-          <div className="space-y-1">
-            <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              Navigation Menu
-            </div>
-            {navItems.map((item) => {
-              const Icon = item.icon
-              const isActive = activeTab === item.id
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer group ${
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_4px_12px_rgba(140,50,220,0.25)]'
-                      : 'text-slate-600 hover:text-slate-950 hover:bg-purple-50/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 transition-transform group-hover:scale-110 ${
-                        isActive ? 'text-white' : 'text-slate-500 group-hover:text-purple-600'
-                      }`}
-                    />
-                    <span>{item.label}</span>
-                  </div>
-
-                  {item.badge !== undefined && (
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        isActive
-                          ? 'bg-white/20 text-white'
-                          : item.id === 'absences'
-                            ? 'bg-rose-500 text-white animate-pulse'
-                            : 'bg-purple-100 text-purple-800'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* User Profile & Logout Bottom Bar */}
-        <div className="p-3.5 border-t border-slate-100 bg-slate-50/50">
-          <div className="flex items-center justify-between bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                {adminUser?.avatar || 'BH'}
-              </div>
-              <div className="truncate text-left">
-                <p className="text-xs font-bold text-slate-900 truncate leading-tight">
-                  {adminUser?.name || 'Administrator'}
-                </p>
-                <p className="text-[10px] text-purple-700 font-medium truncate leading-tight">
-                  {adminUser?.role || 'Super Admin'}
-                </p>
-              </div>
-            </div>
-
+          return (
             <button
+              key={item.id}
               type="button"
-              onClick={onLogout}
-              title="Sign out of Admin Portal"
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
-              aria-label="Logout"
+              onClick={() => handleNavClick(item.id)}
+              className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all cursor-pointer group ${
+                isActive
+                  ? 'bg-white text-slate-950 shadow-[0_2px_6px_rgba(72,67,110,0.12)]'
+                  : 'text-[#66647d] hover:bg-white/70 hover:text-slate-950'
+              }`}
             >
-              <LogOut className="w-4 h-4" />
+              <Icon className={`h-4 w-4 ${isActive ? 'text-slate-900' : 'text-[#66647d] group-hover:text-slate-900'}`} />
+              <span>{item.label}</span>
+              {item.badge !== undefined && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${item.id === 'absences' ? 'bg-rose-500 text-white' : 'bg-purple-100 text-purple-800'}`}>
+                  {item.badge}
+                </span>
+              )}
             </button>
-          </div>
-        </div>
-      </aside>
-    </>
+          )
+        })}
+      </div>
+    </nav>
   )
 }

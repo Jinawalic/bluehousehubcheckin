@@ -412,33 +412,30 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F6FC] text-slate-900 font-sans selection:bg-purple-200 selection:text-purple-900 flex">
-      {/* 1. Sidebar Component with links */}
-      <AdminSidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        pendingAbsencesCount={stats.pendingAbsences}
-        totalAttendanceCount={stats.total}
-        totalStudentsCount={students.length}
-        adminUser={adminUser}
-        onLogout={handleLogout}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
-      {/* Main Wrapper (Offset for fixed sidebar on lg screens) */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
-        {/* 2. Top Header Component */}
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e8e4fa_0,_#f7f8fd_42%,_#f8f8fc_100%)] text-slate-900 font-sans selection:bg-purple-200 selection:text-purple-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1800px] flex-col">
         <AdminHeader
           activeTab={activeTab}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onOpenManualModal={() => setIsManualModalOpen(true)}
           onExportCSV={handleExportCSV}
           adminUser={adminUser}
+          onLogout={handleLogout}
         />
 
-        {/* 3. Main Body Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <AdminSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          pendingAbsencesCount={stats.pendingAbsences}
+          totalAttendanceCount={stats.total}
+          totalStudentsCount={students.length}
+          adminUser={adminUser}
+          onLogout={handleLogout}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+
+        <main className="mx-3 mt-10 flex-1 rounded-t-[28px] border border-[#e4e1ee] bg-white/90 p-4 shadow-[0_-4px_30px_rgba(93,84,140,0.04)] sm:mx-6 sm:p-6 lg:mx-12 lg:mt-12 lg:p-8">
           {/* Conditional View Rendering based on active tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
