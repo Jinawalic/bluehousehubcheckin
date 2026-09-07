@@ -23,6 +23,7 @@ import {
   StudentRegistrationModal,
   type StudentRegistrationFormValues,
 } from '@/components/student/student-registration-modal'
+import { StudentCheckInSuccess } from '@/components/student/student-checkin-success'
 
 // Check-in window (Nigerian time, server clock)
 const OPEN_HOUR = 9
@@ -191,10 +192,16 @@ export function CheckInForm() {
     }
   }
 
+  const [isCheckedIn, setIsCheckedIn] = useState(false)
+  const [checkedInStudent, setCheckedInStudent] = useState({
+    name: 'Student',
+    track: 'Web Development',
+  })
+
   const handleRegistrationSubmit = (values: StudentRegistrationFormValues) => {
     const selectedMonths = values.studentType === 'private' ? 3 : values.months
     toast.success(`${values.name} registered successfully.`, {
-      description: `${values.studentType === 'private' ? 'Private student' : 'Intern student'} • ${values.school} • ${selectedMonths} months`,
+      description: `${values.studentType === 'private' ? 'Private student' : 'Intern student'} • ${values.track} • ${selectedMonths} months`,
     })
   }
 
@@ -217,6 +224,11 @@ export function CheckInForm() {
       // Simulate verification
       await new Promise((resolve) => setTimeout(resolve, 1200))
 
+      setCheckedInStudent({
+        name: trimmed,
+        track: 'Web Development',
+      })
+      setIsCheckedIn(true)
       toast.success(`Check-in successful! Verified ${trimmed}.`, {
         description: `Role: ${ROLE_CONFIGS[currentRole].name.toUpperCase()} • ID: ${trimmed} • Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
       })
@@ -255,6 +267,15 @@ export function CheckInForm() {
   }
 
   const currentConfig = ROLE_CONFIGS[currentRole]
+
+  if (isCheckedIn) {
+    return (
+      <StudentCheckInSuccess
+        studentName={checkedInStudent.name}
+        studentTrack={checkedInStudent.track}
+      />
+    )
+  }
 
   return (
     <main className="relative min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 sm:py-12 overflow-hidden bg-[#F4EFFB] selection:bg-purple-200 selection:text-purple-900 font-sans">
