@@ -64,7 +64,7 @@ export function StatsOverview({ stats, onNavigateTab }: StatsOverviewProps) {
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-black text-slate-900">{stats.students}</div>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">BHH/ Cohort IDs</p>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Student IDs</p>
         </div>
       </div>
 

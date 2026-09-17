@@ -18,14 +18,14 @@ export function ManualCheckinModal({
 }: ManualCheckinModalProps) {
   const [name, setName] = useState('')
   const [role, setRole] = useState<Role>('student')
-  const [identifier, setIdentifier] = useState('BHH/')
+  const [identifier, setIdentifier] = useState('')
   const [track, setTrack] = useState('Full-Stack Web Dev')
 
   if (!isOpen) return null
 
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole)
-    if (newRole === 'student') setIdentifier('BHH/')
+    if (newRole === 'student') setIdentifier('')
     else if (newRole === 'mentor') setIdentifier('BHS/')
     else if (newRole === 'corper') setIdentifier('PL/')
   }
@@ -52,7 +52,7 @@ export function ManualCheckinModal({
     onAddRecord(newRec)
     toast.success(`Check-in recorded for ${newRec.name}`)
     setName('')
-    setIdentifier(role === 'student' ? 'BHH/' : role === 'mentor' ? 'BHS/' : 'PL/')
+    setIdentifier(role === 'student' ? '' : role === 'mentor' ? 'BHS/' : 'PL/')
     onClose()
   }
 
@@ -114,7 +114,7 @@ export function ManualCheckinModal({
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="BHH/24/..."
+                placeholder="24/..."
                 required
                 className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 outline-none uppercase font-mono text-xs"
               />

@@ -11,8 +11,11 @@ model Participant {
   id           String            @id @default(cuid())
   name         String
   role         String            // 'student' | 'mentor' | 'corper'
-  identifier   String            @unique // e.g. 'BHH/24/001', 'BHS/24/001', 'PL/24A/1234'
+  identifier   String            @unique // e.g. '24/001', 'BHS/24/001', 'PL/24A/1234'
   track        String            // e.g. 'Full-Stack Web Development', 'Data Science & AI'
+  school       String?
+  studentType  String?
+  months       Int?
   email        String?
   phone        String?
   status       String            @default("active") // 'active' | 'inactive'

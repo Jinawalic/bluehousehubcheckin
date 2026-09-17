@@ -47,10 +47,10 @@ const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   student: {
     name: 'Student',
     label: 'Student ID',
-    prefix: 'BHH/',
-    placeholder: 'e.g. BHH/24/001',
-    hint: 'Prefix: BHH/',
-    example: 'BHH/24/001',
+    prefix: '',
+    placeholder: 'e.g. 24/001',
+    hint: 'Enter the student ID as registered',
+    example: '24/001',
   },
   mentor: {
     name: 'Staff',
@@ -92,7 +92,7 @@ function formatCountdown(seconds: number) {
 
 export function CheckInForm() {
   const [currentRole, setCurrentRole] = useState<Role>('student')
-  const [identifier, setIdentifier] = useState('BHH/')
+  const [identifier, setIdentifier] = useState('')
   const [isCheckingIn, setIsCheckingIn] = useState(false)
   const [isWithinWindow, setIsWithinWindow] = useState(false)
   const [timeStatusText, setTimeStatusText] = useState('Check-in is closed for today (closes 6:00 PM).')
@@ -101,7 +101,7 @@ export function CheckInForm() {
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
 
   // Absence form state
-  const [absenceIdentifier, setAbsenceIdentifier] = useState('BHH/')
+  const [absenceIdentifier, setAbsenceIdentifier] = useState('')
   const [absenceName, setAbsenceName] = useState('')
   const [absenceRole, setAbsenceRole] = useState<Role>('student')
   const [absenceReason, setAbsenceReason] = useState('')
@@ -168,7 +168,7 @@ export function CheckInForm() {
     if (val.startsWith(prefix)) {
       setIdentifier(val)
     } else if (val.startsWith(rawPrefix)) {
-      // e.g. BHH24 -> BHH/24
+      // Allow users to enter identifiers with or without separators.
       const rest = val.slice(rawPrefix.length).replace(/^[/-]/, '')
       setIdentifier(prefix + rest)
     } else {
@@ -198,10 +198,17 @@ export function CheckInForm() {
     track: 'Web Development',
   })
 
-  const handleRegistrationSubmit = (values: StudentRegistrationFormValues) => {
-    const selectedMonths = values.studentType === 'private' ? 3 : values.months
+  const handleRegistrationSubmit = async (values: StudentRegistrationFormValues) => {
+    const response = await fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    })
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error ?? 'Registration failed.')
+
     toast.success(`${values.name} registered successfully.`, {
-      description: `${values.studentType === 'private' ? 'Private student' : 'Intern student'} • ${values.track} • ${selectedMonths} months`,
+      description: `Your student ID is ${result.identifier}. Keep it for daily check-in.`,
     })
   }
 
@@ -221,21 +228,39 @@ export function CheckInForm() {
     setIsCheckingIn(true)
 
     try {
-      // Simulate verification
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      const coordinates = await new Promise<GeolocationCoordinates | null>((resolve) => {
+        if (!navigator.geolocation) return resolve(null)
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve(position.coords),
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+        )
+      })
+      const response = await fetch('/api/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: trimmed,
+          role: currentRole,
+          latitude: coordinates?.latitude,
+          longitude: coordinates?.longitude,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Check-in failed.')
 
       setCheckedInStudent({
-        name: trimmed,
-        track: 'Web Development',
+        name: result.name,
+        track: result.track,
       })
       setIsCheckedIn(true)
-      toast.success(`Check-in successful! Verified ${trimmed}.`, {
-        description: `Role: ${ROLE_CONFIGS[currentRole].name.toUpperCase()} • ID: ${trimmed} • Time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+      toast.success(`Check-in successful! Verified ${result.identifier}.`, {
+        description: `Role: ${ROLE_CONFIGS[currentRole].name.toUpperCase()} • Time: ${result.checkInTime}`,
       })
       // Reset to prefix
       setIdentifier(prefix)
     } catch (error) {
-      toast.error('Failed to submit check-in. Please try again.')
+      toast.error(error instanceof Error ? error.message : 'Failed to submit check-in. Please try again.')
     } finally {
       setIsCheckingIn(false)
     }
@@ -251,7 +276,18 @@ export function CheckInForm() {
 
     setIsSubmittingAbsence(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch('/api/absence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: absenceName,
+          identifier: absenceIdentifier,
+          role: absenceRole,
+          reason: absenceReason,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Absence submission failed.')
       toast.success('Absence report submitted successfully.', {
         description: `Logged for ${absenceName} (${absenceIdentifier.trim()}).`,
       })
@@ -260,7 +296,7 @@ export function CheckInForm() {
       setAbsenceReason('')
       setIsAbsenceModalOpen(false)
     } catch (error) {
-      toast.error('Failed to submit absence report.')
+      toast.error(error instanceof Error ? error.message : 'Failed to submit absence report.')
     } finally {
       setIsSubmittingAbsence(false)
     }
