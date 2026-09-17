@@ -43,6 +43,8 @@ async function ensureConfiguredAdmin(email: string) {
     await prisma.adminUser.create({
       data: { email, password: await hashPassword(configuredPassword), name: process.env.ADMIN_NAME || 'Hub Administrator' },
     })
+  } else if (!existing.password) {
+    await prisma.adminUser.update({ where: { email }, data: { password: await hashPassword(configuredPassword) } })
   }
 }
 

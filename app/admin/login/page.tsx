@@ -11,7 +11,6 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  Sparkles,
   ArrowLeft,
   KeyRound,
   CheckCircle2,
@@ -36,11 +35,10 @@ export default function AdminLoginPage() {
   const [isSendingReset, setIsSendingReset] = useState(false)
   const [currentTime, setCurrentTime] = useState('')
 
-  // Check if already authenticated
   useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('hub_admin_auth') === 'true') {
-      router.replace('/admin/dashboard')
-    }
+    fetch('/api/admin/session', { cache: 'no-store' }).then((response) => {
+      if (response.ok) router.replace('/admin/dashboard')
+    })
   }, [router])
 
   // Update Lagos clock
@@ -79,37 +77,20 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      // Simulate authentication request
-      await new Promise((resolve) => setTimeout(resolve, 900))
-
-      // Allow demo admin login or any valid formatted admin email
-      const isDemoAdmin =
-        (cleanEmail === 'admin@bluehouse.tech' || cleanEmail === 'admin' || cleanEmail.includes('@bluehouse')) &&
-        (cleanPassword === 'admin123' || cleanPassword.length >= 4)
-
-      if (isDemoAdmin || cleanPassword.length >= 4) {
-        // Save auth state
-        localStorage.setItem('hub_admin_auth', 'true')
-        localStorage.setItem(
-          'hub_admin_user',
-          JSON.stringify({
-            name: cleanEmail.includes('@') ? cleanEmail.split('@')[0].toUpperCase() : 'Hub Director',
-            email: cleanEmail.includes('@') ? cleanEmail : 'admin@bluehouse.tech',
-            role: 'Super Administrator',
-            avatar: 'BH',
-            loginTime: new Date().toISOString(),
-          })
-        )
-
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword, remember: rememberMe }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (response.ok) {
         toast.success('Authentication successful', {
           description: 'Welcome back to the Blue House Hub Command Center.',
         })
-
-        // Seamless transition to admin dashboard
         router.push('/admin/dashboard')
       } else {
         toast.error('Invalid credentials', {
-          description: 'The email or password you entered is incorrect. Try using demo access.',
+          description: result.error || 'The email or password you entered is incorrect.',
         })
       }
     } catch (err) {
@@ -119,14 +100,6 @@ export default function AdminLoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleFillDemo = () => {
-    setEmail('admin@bluehouse.tech')
-    setPassword('admin123')
-    toast.info('Demo credentials loaded', {
-      description: 'Click "Sign in to Dashboard" to proceed.',
-    })
   }
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -171,15 +144,6 @@ export default function AdminLoginPage() {
               <h2 className="text-base sm:text-lg font-semibold text-slate-900">Admin Sign In</h2>
               <p className="text-xs text-slate-500">Enter your administrative credentials</p>
             </div>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-lg border border-purple-200 transition-colors cursor-pointer"
-              title="Auto-fill demo admin credentials"
-            >
-              <Sparkles className="w-3 h-3 text-purple-600" />
-              <span>Fill Demo</span>
-            </button>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
@@ -282,16 +246,6 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Info Box */}
-          <div className="mt-6 pt-5 border-t border-slate-100 flex items-start gap-2.5 bg-purple-50/60 rounded-xl p-3 text-xs text-slate-600">
-            <KeyRound className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-slate-800">Quick Test Credentials:</span>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Email: <code className="bg-white/80 px-1 py-0.5 rounded text-purple-700 font-mono">admin@bluehouse.tech</code> | Pass: <code className="bg-white/80 px-1 py-0.5 rounded text-purple-700 font-mono">admin123</code>
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Footer Info */}
