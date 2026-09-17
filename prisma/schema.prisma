@@ -8,21 +8,21 @@ datasource db {
 }
 
 model Participant {
-  id           String            @id @default(cuid())
-  name         String
-  role         String            // 'student' | 'mentor'
-  identifier   String            @unique // e.g. '24/001', 'BHS/24/001', 'PL/24A/1234'
-  track        String            // e.g. 'Full-Stack Web Development', 'Data Science & AI'
-  school       String?
-  studentType  String?
-  months       Int?
-  email        String?
-  phone        String?
-  status       String            @default("active") // 'active' | 'inactive'
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  attendances  Attendance[]
-  absences     AbsenceRequest[]
+  id          String           @id @default(cuid())
+  name        String
+  role        String // 'student' | 'mentor'
+  identifier  String           @unique // e.g. '24/001', 'BHS/24/001', 'PL/24A/1234'
+  track       String // e.g. 'Full-Stack Web Development', 'Data Science & AI'
+  school      String?
+  studentType String?
+  months      Int?
+  email       String?
+  phone       String?
+  status      String           @default("active") // 'active' | 'inactive'
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  attendances Attendance[]
+  absences    AbsenceRequest[]
 
   @@index([identifier])
   @@index([role])
@@ -34,14 +34,14 @@ model Attendance {
   participant    Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
   identifier     String
   name           String
-  role           String       // 'student' | 'mentor'
+  role           String // 'student' | 'mentor'
   track          String?
   latitude       Float?
   longitude      Float?
   distanceMeters Float        @default(0)
   status         String       @default("on-time") // 'on-time' | 'late' | 'excused'
-  checkInTime    String       // formatted time e.g. "09:12 AM"
-  date           String       // YYYY-MM-DD e.g. "2026-09-01"
+  checkInTime    String // formatted time e.g. "09:12 AM"
+  date           String // YYYY-MM-DD e.g. "2026-09-01"
   timestamp      DateTime     @default(now())
   notes          String?
   createdAt      DateTime     @default(now())
@@ -57,9 +57,9 @@ model AbsenceRequest {
   participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
   identifier    String
   name          String
-  role          String       // 'student' | 'mentor'
+  role          String // 'student' | 'mentor'
   reason        String
-  submittedAt   String       // formatted string e.g. "Today, 08:30 AM"
+  submittedAt   String // formatted string e.g. "Today, 08:30 AM"
   status        String       @default("pending") // 'pending' | 'approved' | 'rejected'
   reviewedBy    String?
   reviewedAt    DateTime?
@@ -71,14 +71,14 @@ model AbsenceRequest {
 }
 
 model AdminUser {
-  id         String   @id @default(cuid())
-  name       String
-  email      String   @unique
-  password   String?
-  role       String   @default("Super Administrator")
-  avatar     String?  @default("BH")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String?
+  role      String   @default("Super Administrator")
+  avatar    String?  @default("BH")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
 }
