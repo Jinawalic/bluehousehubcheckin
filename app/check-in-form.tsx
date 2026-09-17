@@ -6,7 +6,6 @@ import {
   MapPin,
   Clock,
   GraduationCap,
-  Flag,
   User,
   AlertCircle,
   Loader2,
@@ -31,7 +30,7 @@ const CLOSE_HOUR = 18
 
 const HUB_COORDS = { latitude: 9.88452647721506, longitude: 8.876546119960212 }
 
-type Role = 'student' | 'mentor' | 'corper'
+type Role = 'student' | 'mentor'
 type StudentRegistrationType = 'private' | 'intern'
 
 interface RoleConfig {
@@ -46,11 +45,11 @@ interface RoleConfig {
 const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   student: {
     name: 'Student',
-    label: 'Student ID',
+    label: 'Full name',
     prefix: '',
-    placeholder: 'e.g. 24/001',
-    hint: 'Enter the student ID as registered',
-    example: '24/001',
+    placeholder: 'e.g. Adaeze Okafor',
+    hint: 'Enter your full registered name',
+    example: 'Adaeze Okafor',
   },
   mentor: {
     name: 'Staff',
@@ -59,14 +58,6 @@ const ROLE_CONFIGS: Record<Role, RoleConfig> = {
     placeholder: 'e.g. BHS/24/001',
     hint: 'Prefix: BHS/',
     example: 'BHS/24/001',
-  },
-  corper: {
-    name: 'Corper',
-    label: 'Corper State Code',
-    prefix: 'PL/',
-    placeholder: 'e.g. PL/24A/1234',
-    hint: 'Prefix: PL/',
-    example: 'PL/24A/1234',
   },
 }
 
@@ -133,29 +124,14 @@ export function CheckInForm() {
     return () => clearInterval(interval)
   }, [])
 
-  // Handle role change and automatically update prefix
   const handleRoleChange = (newRole: Role) => {
     setCurrentRole(newRole)
-    const newPrefix = ROLE_CONFIGS[newRole].prefix
-    
-    // If the input was empty or only had the old prefix, replace it with the new prefix
-    const oldPrefix = ROLE_CONFIGS[currentRole].prefix
-    if (!identifier || identifier === oldPrefix) {
-      setIdentifier(newPrefix)
-    } else {
-      // Extract whatever user typed after the old prefix (or raw string)
-      let suffix = identifier.toUpperCase()
-      if (suffix.startsWith(oldPrefix)) {
-        suffix = suffix.slice(oldPrefix.length)
-      } else if (suffix.startsWith(oldPrefix.replace('/', ''))) {
-        suffix = suffix.slice(oldPrefix.replace('/', '').length).replace(/^[/-]/, '')
-      }
-      setIdentifier(newPrefix + suffix)
-    }
+    setIdentifier(newRole === 'mentor' ? 'BHS/' : '')
   }
 
   const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.toUpperCase()
+    let val = e.target.value
+    if (currentRole === 'student') { setIdentifier(val); return }
     const prefix = ROLE_CONFIGS[currentRole].prefix
     const rawPrefix = prefix.replace('/', '')
 
@@ -179,17 +155,7 @@ export function CheckInForm() {
 
   const handleAbsenceRoleChange = (newRole: Role) => {
     setAbsenceRole(newRole)
-    const newPrefix = ROLE_CONFIGS[newRole].prefix
-    const oldPrefix = ROLE_CONFIGS[absenceRole].prefix
-    if (!absenceIdentifier || absenceIdentifier === oldPrefix) {
-      setAbsenceIdentifier(newPrefix)
-    } else {
-      let suffix = absenceIdentifier.toUpperCase()
-      if (suffix.startsWith(oldPrefix)) {
-        suffix = suffix.slice(oldPrefix.length)
-      }
-      setAbsenceIdentifier(newPrefix + suffix)
-    }
+    setAbsenceIdentifier(newRole === 'mentor' ? 'BHS/' : '')
   }
 
   const [isCheckedIn, setIsCheckedIn] = useState(false)
@@ -208,7 +174,7 @@ export function CheckInForm() {
     if (!response.ok) throw new Error(result.error ?? 'Registration failed.')
 
     toast.success(`${values.name} registered successfully.`, {
-      description: `Your student ID is ${result.identifier}. Keep it for daily check-in.`,
+      description: 'Use your full registered name for daily check-in.',
     })
   }
 
@@ -216,7 +182,7 @@ export function CheckInForm() {
     if (e) e.preventDefault()
 
     const prefix = ROLE_CONFIGS[currentRole].prefix
-    const trimmed = identifier.trim().toUpperCase()
+    const trimmed = currentRole === 'student' ? identifier.trim() : identifier.trim().toUpperCase()
 
     if (!trimmed || trimmed === prefix) {
       toast.error(`Please enter your ${ROLE_CONFIGS[currentRole].label}.`, {
@@ -241,6 +207,7 @@ export function CheckInForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: trimmed,
+          name: currentRole === 'student' ? trimmed : undefined,
           role: currentRole,
           latitude: coordinates?.latitude,
           longitude: coordinates?.longitude,
@@ -254,11 +221,11 @@ export function CheckInForm() {
         track: result.track,
       })
       setIsCheckedIn(true)
-      toast.success(`Check-in successful! Verified ${result.identifier}.`, {
+      toast.success(`Check-in successful! Verified ${result.name}.`, {
         description: `Role: ${ROLE_CONFIGS[currentRole].name.toUpperCase()} • Time: ${result.checkInTime}`,
       })
       // Reset to prefix
-      setIdentifier(prefix)
+      setIdentifier(currentRole === 'mentor' ? prefix : '')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to submit check-in. Please try again.')
     } finally {
@@ -269,7 +236,7 @@ export function CheckInForm() {
   const handleAbsenceSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const prefix = ROLE_CONFIGS[absenceRole].prefix
-    if (!absenceName.trim() || !absenceIdentifier.trim() || absenceIdentifier.trim() === prefix || !absenceReason.trim()) {
+    if (!absenceName.trim() || (absenceRole === 'mentor' && (!absenceIdentifier.trim() || absenceIdentifier.trim() === prefix)) || !absenceReason.trim()) {
       toast.error('Please fill in all required fields.')
       return
     }
@@ -289,10 +256,10 @@ export function CheckInForm() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Absence submission failed.')
       toast.success('Absence report submitted successfully.', {
-        description: `Logged for ${absenceName} (${absenceIdentifier.trim()}).`,
+        description: `Logged for ${absenceName}.`,
       })
       setAbsenceName('')
-      setAbsenceIdentifier(prefix)
+      setAbsenceIdentifier(absenceRole === 'mentor' ? prefix : '')
       setAbsenceReason('')
       setIsAbsenceModalOpen(false)
     } catch (error) {
@@ -427,20 +394,6 @@ export function CheckInForm() {
               <span>Mentor</span>
             </button>
 
-            {/* Corper */}
-            <button
-              type="button"
-              role="tab"
-              aria-selected={currentRole === 'corper'}
-              onClick={() => handleRoleChange('corper')}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer select-none ${currentRole === 'corper'
-                ? 'bg-white text-slate-900 shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
-                : 'text-slate-600 hover:text-slate-900 font-medium'
-                }`}
-            >
-              <Flag className="w-4 h-4 stroke-[2.2]" />
-              <span>Corper</span>
-            </button>
           </div>
 
           {/* Form Content */}
@@ -537,8 +490,8 @@ export function CheckInForm() {
                 <label className="block text-slate-800 font-medium text-xs sm:text-sm mb-1.5">
                   Role
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['student', 'mentor', 'corper'] as const).map((r) => (
+                <div className="grid grid-cols-2 gap-2">
+                  {(['student', 'mentor'] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
@@ -568,7 +521,7 @@ export function CheckInForm() {
                 />
               </div>
 
-              <div>
+              {absenceRole === 'mentor' && <div>
                 <label className="block text-slate-800 font-medium text-xs sm:text-sm mb-1.5">
                   {ROLE_CONFIGS[absenceRole].label}
                 </label>
@@ -587,10 +540,10 @@ export function CheckInForm() {
                     }
                   }}
                   placeholder={ROLE_CONFIGS[absenceRole].placeholder}
-                  required
+                  required={absenceRole === 'mentor'}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
                 />
-              </div>
+              </div>}
 
               <div>
                 <label className="block text-slate-800 font-medium text-xs sm:text-sm mb-1.5">

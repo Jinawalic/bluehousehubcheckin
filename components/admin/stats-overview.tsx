@@ -5,7 +5,6 @@ import {
   Users,
   GraduationCap,
   Briefcase,
-  Flag,
   AlertCircle,
   TrendingUp,
   ChevronRight,
@@ -17,7 +16,6 @@ interface StatsOverviewProps {
     total: number
     students: number
     staff: number
-    corpers: number
     pendingAbsences: number
     onTimeRate: number
   }
@@ -26,7 +24,7 @@ interface StatsOverviewProps {
 
 export function StatsOverview({ stats, onNavigateTab }: StatsOverviewProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
       {/* Total Checked In */}
       <div
         onClick={() => onNavigateTab('attendance')}
@@ -64,7 +62,7 @@ export function StatsOverview({ stats, onNavigateTab }: StatsOverviewProps) {
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-black text-slate-900">{stats.students}</div>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Student IDs</p>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Name-based check-in</p>
         </div>
       </div>
 
@@ -84,25 +82,6 @@ export function StatsOverview({ stats, onNavigateTab }: StatsOverviewProps) {
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-black text-slate-900">{stats.staff}</div>
           <p className="text-[11px] text-slate-400 font-medium mt-0.5">BHS/ Faculty IDs</p>
-        </div>
-      </div>
-
-      {/* NYSC Corpers */}
-      <div
-        onClick={() => onNavigateTab('attendance')}
-        className="bg-white p-4 sm:p-5 rounded-2xl border border-purple-100/80 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer group"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 group-hover:text-emerald-700 transition-colors">
-            NYSC Corpers
-          </span>
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center transition-transform group-hover:scale-110">
-            <Flag className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="text-2xl sm:text-3xl font-black text-slate-900">{stats.corpers}</div>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">PL/ State codes</p>
         </div>
       </div>
 

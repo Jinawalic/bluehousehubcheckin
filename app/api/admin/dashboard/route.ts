@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
 
-const roles = ['student', 'mentor', 'corper']
+const roles = ['student', 'mentor']
 
 function unauthorized(error: unknown) {
   return error instanceof Error && error.message === 'UNAUTHORIZED'
@@ -12,9 +12,9 @@ export async function GET() {
   try {
     await requireAdmin()
     const [participants, attendance, absences, setting] = await Promise.all([
-      prisma.participant.findMany({ orderBy: { createdAt: 'desc' } }),
-      prisma.attendance.findMany({ orderBy: { timestamp: 'desc' }, take: 500 }),
-      prisma.absenceRequest.findMany({ orderBy: { createdAt: 'desc' }, take: 500 }),
+      prisma.participant.findMany({ where: { role: { in: roles } }, orderBy: { createdAt: 'desc' } }),
+      prisma.attendance.findMany({ where: { role: { in: roles } }, orderBy: { timestamp: 'desc' }, take: 500 }),
+      prisma.absenceRequest.findMany({ where: { role: { in: roles } }, orderBy: { createdAt: 'desc' }, take: 500 }),
       prisma.hubSetting.findUnique({ where: { id: 'default' } }),
     ])
     return NextResponse.json({

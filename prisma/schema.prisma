@@ -10,7 +10,7 @@ datasource db {
 model Participant {
   id           String            @id @default(cuid())
   name         String
-  role         String            // 'student' | 'mentor' | 'corper'
+  role         String            // 'student' | 'mentor'
   identifier   String            @unique // e.g. '24/001', 'BHS/24/001', 'PL/24A/1234'
   track        String            // e.g. 'Full-Stack Web Development', 'Data Science & AI'
   school       String?
@@ -34,7 +34,7 @@ model Attendance {
   participant    Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
   identifier     String
   name           String
-  role           String       // 'student' | 'mentor' | 'corper'
+  role           String       // 'student' | 'mentor'
   track          String?
   latitude       Float?
   longitude      Float?
@@ -57,7 +57,7 @@ model AbsenceRequest {
   participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
   identifier    String
   name          String
-  role          String       // 'student' | 'mentor' | 'corper'
+  role          String       // 'student' | 'mentor'
   reason        String
   submittedAt   String       // formatted string e.g. "Today, 08:30 AM"
   status        String       @default("pending") // 'pending' | 'approved' | 'rejected'

@@ -5,7 +5,6 @@ import {
   Search,
   GraduationCap,
   Briefcase,
-  Flag,
   MapPin,
   CheckCircle2,
   Clock,
@@ -68,7 +67,6 @@ export function AttendanceTable({
             <option value="all">All Roles</option>
             <option value="student">Students</option>
             <option value="mentor">Staff / Mentors (BHS/)</option>
-            <option value="corper">NYSC Corpers (PL/)</option>
           </select>
 
           {/* Status Filter */}
@@ -138,7 +136,6 @@ export function AttendanceTable({
                       >
                         {record.role === 'student' && <GraduationCap className="w-3 h-3" />}
                         {record.role === 'mentor' && <Briefcase className="w-3 h-3" />}
-                        {record.role === 'corper' && <Flag className="w-3 h-3" />}
                         <span className="capitalize">{record.role}</span>
                       </span>
                     </td>

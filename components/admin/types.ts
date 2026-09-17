@@ -1,4 +1,4 @@
-export type Role = 'student' | 'mentor' | 'corper'
+export type Role = 'student' | 'mentor'
 export type AttendanceStatus = 'on-time' | 'late' | 'excused'
 
 export interface AttendanceRecord {
@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   distanceMeters: number
   status: AttendanceStatus
   notes?: string
+  date?: string
 }
 
 export interface AbsenceRequest {

@@ -5,7 +5,6 @@ import {
   Search,
   GraduationCap,
   Briefcase,
-  Flag,
   UserPlus,
   Download,
   Trash2,
@@ -17,22 +16,25 @@ import {
   Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Student, Role } from './types'
+import { Student, Role, AttendanceRecord } from './types'
 
 interface StudentsViewProps {
   students: Student[]
+  records: AttendanceRecord[]
   onOpenAddModal: () => void
   onDeleteStudent: (id: string) => void
 }
 
 export function StudentsView({
   students,
+  records,
   onOpenAddModal,
   onDeleteStudent,
 }: StudentsViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | Role>('all')
   const [trackFilter, setTrackFilter] = useState<string>('all')
+  const [historyStudent, setHistoryStudent] = useState<Student | null>(null)
 
   // Extract unique tracks
   const uniqueTracks = useMemo(() => {
@@ -96,7 +98,7 @@ export function StudentsView({
             </span>
           </div>
           <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-            Manage cohort students, faculty mentors, and NYSC corpers enrolled at Blue House Hub.
+            Manage cohort students and faculty mentors enrolled at Blue House Hub.
           </p>
         </div>
 
@@ -146,7 +148,6 @@ export function StudentsView({
             <option value="all">All Roles</option>
             <option value="student">Students</option>
             <option value="mentor">Staff / Mentors (BHS/)</option>
-            <option value="corper">NYSC Corpers (PL/)</option>
           </select>
 
           {/* Track Filter */}
@@ -191,7 +192,7 @@ export function StudentsView({
               <tr>
                 <th className="py-3.5 px-4 sm:px-6">Participant</th>
                 <th className="py-3.5 px-4">Role</th>
-                <th className="py-3.5 px-4">Identifier</th>
+                <th className="py-3.5 px-4">Check-in name / ID</th>
                 <th className="py-3.5 px-4 hidden md:table-cell">Track</th>
                 <th className="py-3.5 px-4 hidden lg:table-cell">Contact</th>
                 <th className="py-3.5 px-4">Enrolled</th>
@@ -232,7 +233,6 @@ export function StudentsView({
                       >
                         {student.role === 'student' && <GraduationCap className="w-3 h-3" />}
                         {student.role === 'mentor' && <Briefcase className="w-3 h-3" />}
-                        {student.role === 'corper' && <Flag className="w-3 h-3" />}
                         <span className="capitalize">{student.role}</span>
                       </span>
                     </td>
@@ -251,6 +251,7 @@ export function StudentsView({
                       {student.registeredAt}
                     </td>
                     <td className="py-3.5 px-4 text-right">
+                      {student.role === 'student' && <button type="button" onClick={() => setHistoryStudent(student)} className="mr-2 rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100">History</button>}
                       <button
                         type="button"
                         onClick={() => {
@@ -270,6 +271,16 @@ export function StudentsView({
           </table>
         </div>
       </div>
+      {historyStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between"><div><h3 className="font-serif text-xl font-bold text-slate-900">{historyStudent.name}</h3><p className="text-xs text-slate-500">Individual check-in history</p></div><button type="button" onClick={() => setHistoryStudent(null)} className="text-sm font-semibold text-slate-500">Close</button></div>
+            <div className="max-h-[55vh] overflow-y-auto divide-y divide-slate-100">
+              {records.filter((record) => record.identifier === historyStudent.identifier).length === 0 ? <p className="py-8 text-center text-sm text-slate-400">No check-ins recorded yet.</p> : records.filter((record) => record.identifier === historyStudent.identifier).map((record) => <div key={record.id} className="flex items-center justify-between py-3 text-sm"><div><p className="font-semibold text-slate-800">{record.date || 'Recorded check-in'}</p><p className="text-xs text-slate-500">{record.track}</p></div><span className="font-medium text-purple-700">{record.checkInTime}</span></div>)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

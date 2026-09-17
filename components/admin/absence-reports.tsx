@@ -10,7 +10,6 @@ import {
   Clock,
   GraduationCap,
   Briefcase,
-  Flag,
 } from 'lucide-react'
 import { AbsenceRequest } from './types'
 

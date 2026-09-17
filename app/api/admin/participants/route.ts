@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/admin-auth'
 
-const roles = ['student', 'mentor', 'corper']
+const roles = ['student', 'mentor']
 
 export async function POST(request: Request) {
   try {
