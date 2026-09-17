@@ -88,11 +88,11 @@ export default function AdminDashboardPage() {
     <AdminHeader activeTab={activeTab} onOpenSidebar={() => setIsSidebarOpen(true)} onOpenManualModal={() => setManualOpen(true)} onExportCSV={exportCsv} adminUser={adminUser} onLogout={logout} />
     <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingAbsencesCount={stats.pendingAbsences} totalAttendanceCount={stats.total} totalStudentsCount={students.length} adminUser={adminUser} onLogout={logout} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     <main className="mx-3 mt-10 flex-1 rounded-t-[28px] border border-[#e4e1ee] bg-white/90 p-4 sm:mx-6 sm:p-6 lg:mx-12 lg:mt-12 lg:p-8">
-      {activeTab === 'overview' && <div className="space-y-6"><StatsOverview stats={stats} onNavigateTab={setActiveTab} /><AttendanceTable records={filteredRecords} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter} /><AnalyticsView /></div>}
+      {activeTab === 'overview' && <div className="space-y-6"><StatsOverview stats={stats} onNavigateTab={setActiveTab} /><AttendanceTable records={filteredRecords} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter} /><AnalyticsView records={records} students={students} /></div>}
       {activeTab === 'attendance' && <AttendanceTable records={filteredRecords} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />}
       {activeTab === 'students' && <StudentsView students={students} onOpenAddModal={() => setAddStudentOpen(true)} onDeleteStudent={deleteStudent} />}
       {activeTab === 'absences' && <AbsenceReports absences={absences} onAbsenceAction={absenceAction} />}
-      {activeTab === 'analytics' && <AnalyticsView />}
+      {activeTab === 'analytics' && <AnalyticsView records={records} students={students} />}
       {activeTab === 'settings' && <SettingsView geofenceRadius={geofenceRadius} setGeofenceRadius={setGeofenceRadius} onSave={saveSettings} />}
     </main></div>
     <ManualCheckinModal isOpen={manualOpen} onClose={() => setManualOpen(false)} onAddRecord={addRecord} />
