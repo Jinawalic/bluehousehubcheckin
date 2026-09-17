@@ -44,7 +44,7 @@ export function AddStudentModal({
   // Manual Form State
   const [name, setName] = useState('')
   const [role, setRole] = useState<Role>('student')
-  const [identifier, setIdentifier] = useState('BHH/')
+  const [identifier, setIdentifier] = useState('')
   const [track, setTrack] = useState(TRACK_OPTIONS[0])
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -60,7 +60,7 @@ export function AddStudentModal({
 
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole)
-    if (newRole === 'student') setIdentifier('BHH/')
+    if (newRole === 'student') setIdentifier('')
     else if (newRole === 'mentor') setIdentifier('BHS/')
     else if (newRole === 'corper') setIdentifier('PL/')
   }
@@ -89,7 +89,7 @@ export function AddStudentModal({
     toast.success(`Registered ${newStudent.name} successfully`)
     // Reset
     setName('')
-    setIdentifier(role === 'student' ? 'BHH/' : role === 'mentor' ? 'BHS/' : 'PL/')
+    setIdentifier(role === 'student' ? '' : role === 'mentor' ? 'BHS/' : 'PL/')
     setEmail('')
     setPhone('')
     onClose()
@@ -177,7 +177,7 @@ export function AddStudentModal({
 
   // Download Sample Template CSV
   const handleDownloadTemplate = () => {
-    const template = 'Full Name,Identifier,Role,Track,Email\nJohn Doe,BHH/24/101,student,Full-Stack Web Development,john@bluehouse.tech\nJane Smith,BHS/24/008,mentor,Data Science & AI,jane@bluehouse.tech\nPeter Obi,PL/24A/2030,corper,Cybersecurity,peter@bluehouse.tech'
+    const template = 'Full Name,Identifier,Role,Track,Email\nJohn Doe,24/101,student,Full-Stack Web Development,john@bluehouse.tech\nJane Smith,BHS/24/008,mentor,Data Science & AI,jane@bluehouse.tech\nPeter Obi,PL/24A/2030,corper,Cybersecurity,peter@bluehouse.tech'
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -287,7 +287,7 @@ export function AddStudentModal({
                         : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Student (BHH/)
+                    Student
                   </button>
                   <button
                     type="button"
@@ -334,7 +334,7 @@ export function AddStudentModal({
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="BHH/24/..."
+                    placeholder="24/..."
                     required
                     className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm font-mono text-slate-900 rounded-xl border border-slate-200 focus:border-purple-500 outline-none uppercase"
                   />
@@ -411,7 +411,7 @@ export function AddStudentModal({
                   onChange={(e) => setBulkRole(e.target.value as Role)}
                   className="w-full px-3 py-2 bg-slate-50 text-xs font-medium text-slate-900 rounded-xl border border-slate-200 outline-none cursor-pointer"
                 >
-                  <option value="student">Student (BHH/)</option>
+                  <option value="student">Student</option>
                   <option value="mentor">Staff / Mentor (BHS/)</option>
                   <option value="corper">NYSC Corper (PL/)</option>
                 </select>

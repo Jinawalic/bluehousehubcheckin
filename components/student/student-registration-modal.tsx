@@ -35,7 +35,7 @@ export interface StudentRegistrationFormValues {
 interface StudentRegistrationModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (values: StudentRegistrationFormValues) => void
+  onSubmit: (values: StudentRegistrationFormValues) => void | Promise<void>
 }
 
 const initialForm: StudentRegistrationFormValues = {
@@ -65,7 +65,7 @@ export function StudentRegistrationModal({
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const { name, email, phone, studentType, school, track, months } = form
@@ -91,9 +91,13 @@ export function StudentRegistrationModal({
       months: studentType === 'private' ? 3 : months,
     }
 
-    onSubmit(payload)
-    setForm(initialForm)
-    onClose()
+    try {
+      await onSubmit(payload)
+      setForm(initialForm)
+      onClose()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Registration failed. Please try again.')
+    }
   }
 
   return (

@@ -52,7 +52,7 @@ export function AttendanceTable({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by participant name, ID (BHH/24/...), or track..."
+            placeholder="Search by participant name, ID (24/...), or track..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500/10 outline-none transition-all"
           />
         </div>
@@ -66,7 +66,7 @@ export function AttendanceTable({
             className="px-3 py-2 bg-slate-50 text-xs font-medium text-slate-700 rounded-xl border border-slate-200 outline-none cursor-pointer hover:bg-slate-100 transition-colors"
           >
             <option value="all">All Roles</option>
-            <option value="student">Students (BHH/)</option>
+            <option value="student">Students</option>
             <option value="mentor">Staff / Mentors (BHS/)</option>
             <option value="corper">NYSC Corpers (PL/)</option>
           </select>
