@@ -26,7 +26,9 @@ export default function AdminLoginPage() {
   const router = useRouter()
 
   const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
@@ -34,12 +36,21 @@ export default function AdminLoginPage() {
   const [forgotEmail, setForgotEmail] = useState('')
   const [isSendingReset, setIsSendingReset] = useState(false)
   const [currentTime, setCurrentTime] = useState('')
+  const [isSetupMode, setIsSetupMode] = useState(false)
+  const [setupAvailable, setSetupAvailable] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/session', { cache: 'no-store' }).then((response) => {
       if (response.ok) router.replace('/admin/dashboard')
     })
   }, [router])
+
+  useEffect(() => {
+    fetch('/api/admin/register', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((result) => setSetupAvailable(result.available === true))
+      .catch(() => setSetupAvailable(false))
+  }, [])
 
   // Update Lagos clock
   useEffect(() => {
@@ -102,6 +113,39 @@ export default function AdminLoginPage() {
     }
   }
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const cleanName = name.trim()
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanName || !cleanEmail || password.length < 10) {
+      toast.error('Complete all fields', { description: 'Use a name, valid email, and password with at least 10 characters.' })
+      return
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/admin/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, password }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || 'Registration failed.')
+      toast.success('Administrator account created')
+      router.push('/admin/dashboard')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Registration failed.')
+      setSetupAvailable(false)
+      setIsSetupMode(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!forgotEmail.trim()) {
@@ -141,12 +185,18 @@ export default function AdminLoginPage() {
         <div className="w-full bg-white/95 backdrop-blur-md rounded-[28px] sm:rounded-[32px] p-6 sm:p-9 shadow-[0_20px_60px_-15px_rgba(130,90,200,0.12),0_1px_3px_rgba(0,0,0,0.02)] border border-white/90 transition-all">
           <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
-              <h2 className="text-base sm:text-lg font-semibold text-slate-900">Admin Sign In</h2>
-              <p className="text-xs text-slate-500">Enter your administrative credentials</p>
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900">{isSetupMode ? 'Create Admin Account' : 'Admin Sign In'}</h2>
+              <p className="text-xs text-slate-500">{isSetupMode ? 'This setup is available only once.' : 'Enter your administrative credentials'}</p>
             </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
+          <form onSubmit={isSetupMode ? handleRegister : handleLogin} className="space-y-4 sm:space-y-5">
+            {isSetupMode && (
+              <div className="space-y-1.5">
+                <label htmlFor="admin-name" className="block text-xs font-semibold text-slate-700">Full name</label>
+                <input id="admin-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required autoComplete="name" className="w-full px-4 py-2.5 sm:py-3 bg-slate-50/80 focus:bg-white text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 outline-none transition-all" />
+              </div>
+            )}
             {/* Email Field */}
             <div className="space-y-1.5">
               <label htmlFor="admin-email" className="block text-xs font-semibold text-slate-700">
@@ -175,13 +225,13 @@ export default function AdminLoginPage() {
                 <label htmlFor="admin-password" className="block text-xs font-semibold text-slate-700">
                   Password
                 </label>
-                <button
+                {!isSetupMode && <button
                   type="button"
                   onClick={() => setIsForgotModalOpen(true)}
                   className="text-xs text-purple-600 hover:text-purple-800 font-medium transition-colors cursor-pointer"
                 >
                   Forgot password?
-                </button>
+                </button>}
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -192,7 +242,7 @@ export default function AdminLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="At least 10 characters"
                   required
                   autoComplete="current-password"
                   className="w-full pl-10 pr-11 py-2.5 sm:py-3 bg-slate-50/80 hover:bg-slate-50 focus:bg-white text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 outline-none transition-all"
@@ -208,8 +258,15 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
+            {isSetupMode && (
+              <div className="space-y-1.5">
+                <label htmlFor="admin-confirm-password" className="block text-xs font-semibold text-slate-700">Confirm password</label>
+                <input id="admin-confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" className="w-full px-4 py-2.5 sm:py-3 bg-slate-50/80 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 outline-none transition-all" />
+              </div>
+            )}
+
             {/* Remember Me & Security notice */}
-            <div className="flex items-center justify-between pt-1">
+            {!isSetupMode && <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -224,7 +281,7 @@ export default function AdminLoginPage() {
                 <Lock className="w-3 h-3 text-slate-400" />
                 <span>256-bit Encrypted</span>
               </span>
-            </div>
+            </div>}
 
             {/* Submit Button */}
             <button
@@ -239,12 +296,18 @@ export default function AdminLoginPage() {
                 </>
               ) : (
                 <>
-                  <span>Sign in to Dashboard</span>
+                  <span>{isSetupMode ? 'Create account & continue' : 'Sign in to Dashboard'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
+
+          {setupAvailable && (
+            <button type="button" onClick={() => setIsSetupMode((current) => !current)} className="mt-4 w-full text-xs font-semibold text-purple-700 hover:text-purple-900">
+              {isSetupMode ? 'Back to administrator sign in' : 'First time here? Create the administrator account'}
+            </button>
+          )}
 
         </div>
 
