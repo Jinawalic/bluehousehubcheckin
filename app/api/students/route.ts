@@ -11,8 +11,9 @@ export async function POST(request: Request) {
     const track = typeof body.track === 'string' ? body.track.trim() : ''
     const studentType = body.studentType === 'intern' ? 'intern' : 'private'
     const months = Number(body.months)
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-    if (!name || !email || !phone || !school || !track || !Number.isInteger(months) || months < 1) {
+    if (!name || !emailPattern.test(email) || !phone || !school || !track || !Number.isInteger(months) || months < 1 || months > 24) {
       return NextResponse.json({ error: 'All student registration fields are required.' }, { status: 400 })
     }
 
@@ -26,13 +27,14 @@ export async function POST(request: Request) {
     }
 
     const participant = await prisma.$transaction(async (transaction) => {
-      const identifier = name
+      const count = await transaction.participant.count({ where: { role: 'student' } })
+      const identifier = `24/${String(count + 1).padStart(3, '0')}`
       return transaction.participant.create({
         data: { name, email, phone, school, track, studentType, months, role: 'student', identifier },
       })
     })
 
-    return NextResponse.json({ id: participant.id, name: participant.name }, { status: 201 })
+    return NextResponse.json({ id: participant.id, name: participant.name, identifier: participant.identifier }, { status: 201 })
   } catch (error) {
     console.error('Student registration failed', error)
     return NextResponse.json({ error: 'Unable to register the student right now.' }, { status: 500 })

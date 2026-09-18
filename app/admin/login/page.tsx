@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import {
   ShieldCheck,
   Lock,
@@ -11,13 +10,7 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  ArrowLeft,
   KeyRound,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
-  Clock,
-  MapPin,
   Building2,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -33,33 +26,12 @@ export default function AdminLoginPage() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [isSendingReset, setIsSendingReset] = useState(false)
-  const [currentTime, setCurrentTime] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/session', { cache: 'no-store' }).then((response) => {
       if (response.ok) router.replace('/admin/dashboard')
     })
   }, [router])
-
-  // Update Lagos clock
-  useEffect(() => {
-    const updateTime = () => {
-      const formatted = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Africa/Lagos',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      }).format(new Date())
-      setCurrentTime(formatted)
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -245,6 +217,7 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
+
 
         </div>
 
