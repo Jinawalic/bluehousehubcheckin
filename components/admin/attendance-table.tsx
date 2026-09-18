@@ -8,8 +8,10 @@ import {
   MapPin,
   CheckCircle2,
   Clock,
+  ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { AttendanceRecord, AttendanceStatus, Role } from './types'
 
@@ -21,6 +23,7 @@ interface AttendanceTableProps {
   setRoleFilter: (role: 'all' | Role) => void
   statusFilter: 'all' | AttendanceStatus
   setStatusFilter: (status: 'all' | AttendanceStatus) => void
+  onDeleteRecord?: (id: string) => Promise<void>
 }
 
 export function AttendanceTable({
@@ -31,6 +34,7 @@ export function AttendanceTable({
   setRoleFilter,
   statusFilter,
   setStatusFilter,
+  onDeleteRecord,
 }: AttendanceTableProps) {
   const hasActiveFilters = searchQuery !== '' || roleFilter !== 'all' || statusFilter !== 'all'
 
@@ -38,6 +42,14 @@ export function AttendanceTable({
     setSearchQuery('')
     setRoleFilter('all')
     setStatusFilter('all')
+  }
+
+  const handleDelete = async (record: AttendanceRecord) => {
+    if (!onDeleteRecord) return
+    const confirmed = window.confirm(`Remove check-in record for ${record.name} (${record.checkInTime})?`)
+    if (confirmed) {
+      await onDeleteRecord(record.id)
+    }
   }
 
   return (
@@ -78,6 +90,7 @@ export function AttendanceTable({
             <option value="all">All Statuses</option>
             <option value="on-time">On-Time</option>
             <option value="late">Late Arrival</option>
+            <option value="excused">Excused / Override</option>
           </select>
 
           {/* Reset Filters */}
@@ -104,15 +117,16 @@ export function AttendanceTable({
                 <th className="py-3.5 px-4">Role</th>
                 <th className="py-3.5 px-4">Identifier</th>
                 <th className="py-3.5 px-4 hidden md:table-cell">Track</th>
-                <th className="py-3.5 px-4">Time</th>
+                <th className="py-3.5 px-4">Time & Date</th>
                 <th className="py-3.5 px-4">GPS Verification</th>
-                <th className="py-3.5 px-4 text-right">Status</th>
+                <th className="py-3.5 px-4">Status</th>
+                {onDeleteRecord && <th className="py-3.5 px-4 text-right">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={onDeleteRecord ? 8 : 7} className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm font-medium">No check-in records found matching your filters.</p>
                   </td>
@@ -144,7 +158,10 @@ export function AttendanceTable({
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell">{record.track}</td>
                     <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
-                      {record.checkInTime}
+                      <div>{record.checkInTime}</div>
+                      {record.date && (
+                        <div className="text-[10px] text-slate-400 font-normal">{record.date}</div>
+                      )}
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/50">
@@ -152,22 +169,34 @@ export function AttendanceTable({
                         <span>{record.distanceMeters}m from Hub</span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                           record.status === 'on-time'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
+                            : record.status === 'late'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-purple-100 text-purple-800'
                         }`}
                       >
-                        {record.status === 'on-time' ? (
-                          <CheckCircle2 className="w-3 h-3" />
-                        ) : (
-                          <Clock className="w-3 h-3" />
-                        )}
+                        {record.status === 'on-time' && <CheckCircle2 className="w-3 h-3" />}
+                        {record.status === 'late' && <Clock className="w-3 h-3" />}
+                        {record.status === 'excused' && <ShieldCheck className="w-3 h-3" />}
                         <span className="capitalize">{record.status}</span>
                       </span>
                     </td>
+                    {onDeleteRecord && (
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(record)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                          title="Delete check-in record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

@@ -48,7 +48,7 @@ export function AdminSidebar({
     },
     {
       id: 'students',
-      label: 'View Students',
+      label: 'View Participants',
       icon: GraduationCap,
       badge: totalStudentsCount !== undefined && totalStudentsCount > 0 ? totalStudentsCount : undefined,
     },
@@ -89,11 +89,10 @@ export function AdminSidebar({
               key={item.id}
               type="button"
               onClick={() => handleNavClick(item.id)}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all cursor-pointer group ${
-                isActive
+              className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-all cursor-pointer group ${isActive
                   ? 'bg-white text-slate-950 shadow-[0_2px_6px_rgba(72,67,110,0.12)]'
                   : 'text-[#66647d] hover:bg-white/70 hover:text-slate-950'
-              }`}
+                }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? 'text-slate-900' : 'text-[#66647d] group-hover:text-slate-900'}`} />
               <span>{item.label}</span>

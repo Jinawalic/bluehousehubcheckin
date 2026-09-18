@@ -44,28 +44,74 @@ function distanceInMeters(latitude: number, longitude: number, targetLatitude: n
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+export async function GET() {
+  try {
+    const setting = await prisma.hubSetting.findUnique({ where: { id: 'default' } })
+    const { hour, date, checkInTime } = lagosDateAndTime()
+    const openHour = setting?.openHour ?? 9
+    const closeHour = setting?.closeHour ?? 18
+    const isOpen = hour >= openHour && hour < closeHour
+
+    return NextResponse.json({
+      openHour,
+      closeHour,
+      latitude: setting?.latitude ?? 9.88452647721506,
+      longitude: setting?.longitude ?? 8.876546119960212,
+      geofenceRadius: setting?.geofenceRadius ?? 100,
+      timezone: setting?.timezone ?? 'Africa/Lagos',
+      currentHour: hour,
+      currentDate: date,
+      currentTime: checkInTime,
+      isOpen,
+    })
+  } catch (error) {
+    console.error('Failed to get check-in info', error)
+    return NextResponse.json({ error: 'Unable to get check-in status' }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const identifier = typeof body.identifier === 'string' ? body.identifier.trim().toUpperCase() : ''
-    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const rawIdentifier = typeof body.identifier === 'string' ? body.identifier.trim() : ''
+    const rawName = typeof body.name === 'string' ? body.name.trim() : ''
     const role = body.role
     const latitude = typeof body.latitude === 'number' ? body.latitude : null
     const longitude = typeof body.longitude === 'number' ? body.longitude : null
 
-    if ((!identifier && !name) || !isRole(role)) {
+    if ((!rawIdentifier && !rawName) || !isRole(role)) {
       return NextResponse.json({ error: 'A valid name or identifier and role are required.' }, { status: 400 })
     }
 
+    // Clean whitespace and prepare case-insensitive search term
+    const cleanSearchTerm = (rawName || rawIdentifier).replace(/\s+/g, ' ')
+    const identifier = rawIdentifier.toUpperCase()
+
     const [participant, setting] = await Promise.all([
-      role === 'student' && name
-        ? prisma.participant.findFirst({ where: { name: { equals: name, mode: 'insensitive' }, role: 'student' } })
-        : prisma.participant.findUnique({ where: { identifier } }),
+      role === 'student'
+        ? prisma.participant.findFirst({
+            where: {
+              role: 'student',
+              OR: [
+                { name: { equals: cleanSearchTerm, mode: 'insensitive' } },
+                { identifier: { equals: cleanSearchTerm, mode: 'insensitive' } },
+              ],
+            },
+          })
+        : prisma.participant.findFirst({
+            where: {
+              role: 'mentor',
+              OR: [
+                { identifier: { equals: rawIdentifier, mode: 'insensitive' } },
+                { name: { equals: cleanSearchTerm, mode: 'insensitive' } },
+              ],
+            },
+          }),
       prisma.hubSetting.findUnique({ where: { id: 'default' } }),
     ])
 
     if (!participant || participant.role !== role || participant.status !== 'active') {
-      return NextResponse.json({ error: 'No active participant was found for this identifier.' }, { status: 404 })
+      return NextResponse.json({ error: 'No active participant was found for this name or identifier.' }, { status: 404 })
     }
 
     const { hour, date, checkInTime } = lagosDateAndTime()
@@ -115,10 +161,41 @@ export async function POST(request: Request) {
       name: participant.name,
       track: participant.track,
       identifier: participant.identifier,
+      role: participant.role,
       checkInTime,
     }, { status: 201 })
   } catch (error) {
     console.error('Check-in failed', error)
     return NextResponse.json({ error: 'Unable to process check-in right now.' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json()
+    const { attendanceId, taskLink, taskReason } = body
+
+    if (!attendanceId || typeof attendanceId !== 'string') {
+      return NextResponse.json({ error: 'Attendance ID is required.' }, { status: 400 })
+    }
+
+    const cleanLink = typeof taskLink === 'string' ? taskLink.trim() : ''
+    const cleanReason = typeof taskReason === 'string' ? taskReason.trim() : ''
+
+    const noteParts: string[] = []
+    if (cleanLink) noteParts.push(`Task: ${cleanLink}`)
+    if (cleanReason) noteParts.push(`Reason: ${cleanReason}`)
+
+    const updated = await prisma.attendance.update({
+      where: { id: attendanceId },
+      data: {
+        notes: noteParts.length > 0 ? noteParts.join(' | ') : 'Task acknowledged (no links submitted)',
+      },
+    })
+
+    return NextResponse.json({ ok: true, attendance: updated })
+  } catch (error) {
+    console.error('Task submission update failed', error)
+    return NextResponse.json({ error: 'Unable to save task details.' }, { status: 500 })
   }
 }

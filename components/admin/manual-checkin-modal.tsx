@@ -1,57 +1,109 @@
 'use client'
 
-import React, { useState } from 'react'
-import { PlusCircle, X } from 'lucide-react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { PlusCircle, X, Search, Check, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
-import { AttendanceRecord, Role } from './types'
+import { AttendanceRecord, AttendanceStatus, Role, Student, STANDARD_TRACKS } from './types'
 
 interface ManualCheckinModalProps {
   isOpen: boolean
   onClose: () => void
   onAddRecord: (record: AttendanceRecord) => void
+  students?: Student[]
 }
 
 export function ManualCheckinModal({
   isOpen,
   onClose,
   onAddRecord,
+  students = [],
 }: ManualCheckinModalProps) {
   const [name, setName] = useState('')
   const [role, setRole] = useState<Role>('student')
   const [identifier, setIdentifier] = useState('')
-  const [track, setTrack] = useState('Full-Stack Web Dev')
+  const [track, setTrack] = useState('Full-Stack Web Development')
+  const [status, setStatus] = useState<AttendanceStatus>('on-time')
+  const [participantId, setParticipantId] = useState<string | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  // Collect unique available tracks from students + standard tracks
+  const availableTracks = useMemo(() => {
+    const set = new Set<string>(STANDARD_TRACKS)
+    students.forEach((s) => {
+      if (s.track && s.track.trim()) set.add(s.track.trim())
+    })
+    return Array.from(set)
+  }, [students])
+
+  // Filter student suggestions as admin types
+  const suggestions = useMemo(() => {
+    if (!name.trim() || name.length < 2) return []
+    const query = name.toLowerCase()
+    return students
+      .filter((s) => s.name.toLowerCase().includes(query) || s.identifier.toLowerCase().includes(query))
+      .slice(0, 5)
+  }, [name, students])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (!isOpen) return null
 
+  const handleSelectStudent = (student: Student) => {
+    setName(student.name)
+    setRole(student.role)
+    setIdentifier(student.identifier)
+    setTrack(student.track || 'General')
+    setParticipantId(student.id)
+    setShowSuggestions(false)
+  }
+
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole)
-    if (newRole === 'student') setIdentifier('')
-    else setIdentifier('BHS/')
+    setParticipantId(null)
+    if (newRole === 'student') {
+      setIdentifier(name.trim() ? name.trim() : '')
+    } else {
+      setIdentifier(identifier.startsWith('BHS/') ? identifier : 'BHS/')
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || (role === 'mentor' && !identifier.trim())) {
+    const trimmedName = name.trim()
+    const trimmedIdentifier = (role === 'student' ? (identifier.trim() || trimmedName) : identifier.trim()).toUpperCase()
+
+    if (!trimmedName || (role === 'mentor' && !trimmedIdentifier)) {
       toast.error('Please enter name and identifier')
       return
     }
 
     const newRec: AttendanceRecord = {
       id: `att-${Date.now()}`,
-      name: name.trim(),
+      participantId: participantId || undefined,
+      name: trimmedName,
       role,
-      identifier: role === 'student' ? name.trim() : identifier.trim().toUpperCase(),
+      identifier: role === 'student' ? trimmedIdentifier : trimmedIdentifier,
       track: track.trim() || 'General',
       checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      distanceMeters: 4,
-      status: 'on-time',
+      distanceMeters: 0,
+      status,
       notes: 'Admin manual entry override',
     }
 
     onAddRecord(newRec)
-    toast.success(`Check-in recorded for ${newRec.name}`)
     setName('')
-    setIdentifier(role === 'student' ? '' : 'BHS/')
+    setIdentifier('')
+    setParticipantId(null)
+    setStatus('on-time')
     onClose()
   }
 
@@ -81,16 +133,57 @@ export function ManualCheckinModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Titus Jinawa"
-              required
-              className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/15 outline-none transition-all"
-            />
+          {/* Full Name with Autocomplete */}
+          <div className="space-y-1.5 relative" ref={wrapperRef}>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-slate-700">Full Name</label>
+              {participantId && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
+                  <UserCheck className="w-3 h-3" />
+                  Linked to Participant
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setParticipantId(null)
+                  setShowSuggestions(true)
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder="e.g. Titus Jinawa"
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/15 outline-none transition-all"
+              />
+            </div>
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-200 divide-y divide-slate-100 z-50 overflow-hidden">
+                <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Registered Participants
+                </div>
+                {suggestions.map((student) => (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() => handleSelectStudent(student)}
+                    className="w-full text-left px-3.5 py-2 hover:bg-purple-50 flex items-center justify-between gap-2 transition cursor-pointer"
+                  >
+                    <div>
+                      <span className="text-xs font-semibold text-slate-900 block">{student.name}</span>
+                      <span className="text-[10px] text-slate-500">{student.track}</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                      {student.identifier}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -119,16 +212,65 @@ export function ManualCheckinModal({
             </div>
           </div>
 
+          {/* Track / Department */}
           <div className="space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700">Track / Department</label>
-            <input
-              type="text"
-              value={track}
-              onChange={(e) => setTrack(e.target.value)}
-              placeholder="e.g. Full-Stack Web Dev"
-              required
-              className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 outline-none"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                list="track-options-list"
+                value={track}
+                onChange={(e) => setTrack(e.target.value)}
+                placeholder="e.g. Full-Stack Web Development"
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 outline-none"
+              />
+              <datalist id="track-options-list">
+                {availableTracks.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          {/* Attendance Status */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700">Status</label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus('on-time')}
+                className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                  status === 'on-time'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                On-Time
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus('late')}
+                className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                  status === 'late'
+                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Late
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus('excused')}
+                className={`py-1.5 px-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                  status === 'excused'
+                    ? 'bg-purple-50 border-purple-300 text-purple-800'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Excused
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-2 pt-3">
@@ -151,3 +293,4 @@ export function ManualCheckinModal({
     </div>
   )
 }
+
