@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const ROLE_VALUES = ['student', 'mentor', 'corper'] as const
+const ROLE_VALUES = ['student', 'mentor'] as const
 
 type Role = (typeof ROLE_VALUES)[number]
 
@@ -48,16 +48,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const identifier = typeof body.identifier === 'string' ? body.identifier.trim().toUpperCase() : ''
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
     const role = body.role
     const latitude = typeof body.latitude === 'number' ? body.latitude : null
     const longitude = typeof body.longitude === 'number' ? body.longitude : null
 
-    if (!identifier || !isRole(role)) {
-      return NextResponse.json({ error: 'A valid identifier and role are required.' }, { status: 400 })
+    if ((!identifier && !name) || !isRole(role)) {
+      return NextResponse.json({ error: 'A valid name or identifier and role are required.' }, { status: 400 })
     }
 
     const [participant, setting] = await Promise.all([
-      prisma.participant.findUnique({ where: { identifier } }),
+      role === 'student' && name
+        ? prisma.participant.findFirst({ where: { name: { equals: name, mode: 'insensitive' }, role: 'student' } })
+        : prisma.participant.findUnique({ where: { identifier } }),
       prisma.hubSetting.findUnique({ where: { id: 'default' } }),
     ])
 

@@ -2,48 +2,16 @@
 
 import React from 'react'
 import {
-  TrendingUp,
   Clock,
   BookOpen,
-  Award,
-  Users,
-  CheckCircle,
 } from 'lucide-react'
+import { AttendanceRecord, Student } from './types'
 
-export function AnalyticsView() {
-  const hourlyData = [
-    { hour: '08:00 AM - 09:00 AM', count: 14, percent: 40, status: 'Early Arrivals' },
-    { hour: '09:00 AM - 10:00 AM', count: 28, percent: 85, status: 'Peak Check-in Window' },
-    { hour: '10:00 AM - 11:00 AM', count: 8, percent: 25, status: 'Late Arrivals' },
-    { hour: '11:00 AM - 12:00 PM', count: 4, percent: 12, status: 'Exception Log' },
-  ]
-
-  const trackData = [
-    {
-      track: 'Full-Stack Web Development',
-      rate: '94%',
-      count: '28 Students',
-      color: 'from-purple-500 to-indigo-500',
-    },
-    {
-      track: 'Data Science & Artificial Intelligence',
-      rate: '89%',
-      count: '22 Students',
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      track: 'UI/UX & Product Design',
-      rate: '96%',
-      count: '18 Students',
-      color: 'from-pink-500 to-rose-500',
-    },
-    {
-      track: 'Cybersecurity & Cloud Infrastructure',
-      rate: '88%',
-      count: '16 Students',
-      color: 'from-emerald-500 to-teal-500',
-    },
-  ]
+export function AnalyticsView({ records, students }: { records: AttendanceRecord[]; students: Student[] }) {
+  const buckets = ['08:00 AM - 09:00 AM', '09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:00 AM - 12:00 PM']
+  const hourlyData = buckets.map((hour, index) => ({ hour, status: index === 0 ? 'Early arrivals' : index === 1 ? 'Peak check-in window' : index === 2 ? 'Late arrivals' : 'Exception log', count: records.filter((record) => { const value = new Date(`1970-01-01 ${record.checkInTime}`).getHours(); return value === index + 8 }).length }))
+  const peak = Math.max(1, ...hourlyData.map((item) => item.count))
+  const trackData = Object.entries(students.reduce<Record<string, { enrolled: number; attended: number }>>((all, student) => { const item = all[student.track] ?? { enrolled: 0, attended: 0 }; item.enrolled++; item.attended = records.filter((record) => record.track === student.track).length; all[student.track] = item; return all }, {})).map(([track, data]) => ({ track, rate: `${data.enrolled ? Math.min(100, Math.round(data.attended / data.enrolled * 100)) : 0}%`, count: `${data.attended} check-ins / ${data.enrolled} registered` }))
 
   return (
     <div className="space-y-6">
@@ -75,7 +43,7 @@ export function AnalyticsView() {
                 <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-purple-500 via-purple-600 to-pink-500 rounded-full transition-all duration-500"
-                    style={{ width: `${item.percent}%` }}
+                    style={{ width: `${Math.round(item.count / peak * 100)}%` }}
                   />
                 </div>
               </div>
@@ -98,7 +66,7 @@ export function AnalyticsView() {
           </div>
 
           <div className="space-y-3 pt-2">
-            {trackData.map((track) => (
+            {trackData.length === 0 ? <p className="py-6 text-center text-xs text-slate-400">No participant data yet.</p> : trackData.map((track) => (
               <div
                 key={track.track}
                 className="p-3.5 bg-slate-50/80 hover:bg-purple-50/50 rounded-xl border border-slate-200/80 transition-colors flex items-center justify-between gap-2"

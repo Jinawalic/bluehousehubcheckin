@@ -26,13 +26,12 @@ export function ManualCheckinModal({
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole)
     if (newRole === 'student') setIdentifier('')
-    else if (newRole === 'mentor') setIdentifier('BHS/')
-    else if (newRole === 'corper') setIdentifier('PL/')
+    else setIdentifier('BHS/')
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !identifier.trim()) {
+    if (!name.trim() || (role === 'mentor' && !identifier.trim())) {
       toast.error('Please enter name and identifier')
       return
     }
@@ -41,7 +40,7 @@ export function ManualCheckinModal({
       id: `att-${Date.now()}`,
       name: name.trim(),
       role,
-      identifier: identifier.trim().toUpperCase(),
+      identifier: role === 'student' ? name.trim() : identifier.trim().toUpperCase(),
       track: track.trim() || 'General',
       checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       distanceMeters: 4,
@@ -52,7 +51,7 @@ export function ManualCheckinModal({
     onAddRecord(newRec)
     toast.success(`Check-in recorded for ${newRec.name}`)
     setName('')
-    setIdentifier(role === 'student' ? '' : role === 'mentor' ? 'BHS/' : 'PL/')
+    setIdentifier(role === 'student' ? '' : 'BHS/')
     onClose()
   }
 
@@ -104,7 +103,6 @@ export function ManualCheckinModal({
               >
                 <option value="student">Student</option>
                 <option value="mentor">Staff / Mentor</option>
-                <option value="corper">NYSC Corper</option>
               </select>
             </div>
 
@@ -114,8 +112,8 @@ export function ManualCheckinModal({
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="24/..."
-                required
+                placeholder={role === 'student' ? 'Uses full name' : 'BHS/...'}
+                required={role === 'mentor'}
                 className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm text-slate-900 rounded-xl border border-slate-200 outline-none uppercase font-mono text-xs"
               />
             </div>

@@ -25,11 +25,11 @@ const TAB_TITLES: Record<AdminTab, { title: string; subtitle: string }> = {
   },
   attendance: {
     title: 'Live Attendance Log',
-    subtitle: 'Daily check-in records for students, mentors, and corpers',
+    subtitle: 'Daily check-in records for students and mentors',
   },
   students: {
     title: 'Participant & Student Roster',
-    subtitle: 'Manage registered students, faculty staff, and NYSC corpers',
+    subtitle: 'Manage registered students and faculty mentors',
   },
   absences: {
     title: 'Absence Requests',

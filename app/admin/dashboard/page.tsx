@@ -1,10 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
-// Modular Components
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 import { AdminHeader } from '@/components/admin/admin-header'
 import { StatsOverview } from '@/components/admin/stats-overview'
@@ -15,495 +13,89 @@ import { AnalyticsView } from '@/components/admin/analytics-view'
 import { SettingsView } from '@/components/admin/settings-view'
 import { ManualCheckinModal } from '@/components/admin/manual-checkin-modal'
 import { AddStudentModal } from '@/components/admin/add-student-modal'
+import { AdminTab, AdminUser, AttendanceRecord, AbsenceRequest, Student, Role, AttendanceStatus } from '@/components/admin/types'
 
-// Types
-import {
-  AdminTab,
-  AdminUser,
-  AttendanceRecord,
-  AbsenceRequest,
-  Student,
-  Role,
-  AttendanceStatus,
-} from '@/components/admin/types'
-
-// Initial realistic mock data for Blue House Hub
-const INITIAL_STUDENTS: Student[] = [
-  {
-    id: 'std-001',
-    name: 'Samuel Adekunle',
-    role: 'student',
-    identifier: '24/001',
-    track: 'Full-Stack Web Development',
-    email: 'samuel.a@bluehouse.tech',
-    phone: '08031234567',
-    registeredAt: '12 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-002',
-    name: 'Blessing Chioma',
-    role: 'student',
-    identifier: '24/014',
-    track: 'Data Science & Artificial Intelligence',
-    email: 'blessing.c@bluehouse.tech',
-    phone: '08129876543',
-    registeredAt: '15 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-003',
-    name: 'Dr. Michael Olanrewaju',
-    role: 'mentor',
-    identifier: 'BHS/24/002',
-    track: 'Faculty / Lead Instructor',
-    email: 'm.olanrewaju@bluehouse.tech',
-    registeredAt: '02 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-004',
-    name: 'Fatima Ibrahim',
-    role: 'corper',
-    identifier: 'PL/24A/0842',
-    track: 'UI/UX & Product Design',
-    email: 'fatima.i@bluehouse.tech',
-    registeredAt: '10 Feb 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-005',
-    name: 'Emmanuel Gyang',
-    role: 'student',
-    identifier: '24/032',
-    track: 'Cybersecurity & Network Defense',
-    email: 'emmanuel.g@bluehouse.tech',
-    registeredAt: '18 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-006',
-    name: 'Aisha Bello',
-    role: 'mentor',
-    identifier: 'BHS/24/007',
-    track: 'Cloud Infrastructure & DevOps',
-    email: 'aisha.bello@bluehouse.tech',
-    registeredAt: '05 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-007',
-    name: 'Daniel Pam',
-    role: 'corper',
-    identifier: 'PL/24A/1105',
-    track: 'Software Engineering',
-    email: 'daniel.pam@bluehouse.tech',
-    registeredAt: '12 Feb 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-008',
-    name: 'Grace Nwosu',
-    role: 'student',
-    identifier: '24/019',
-    track: 'Full-Stack Web Development',
-    email: 'grace.n@bluehouse.tech',
-    registeredAt: '16 Jan 2026',
-    status: 'active',
-  },
-  {
-    id: 'std-009',
-    name: 'Joshua Bitrus',
-    role: 'student',
-    identifier: '24/045',
-    track: 'Data Science & Artificial Intelligence',
-    email: 'joshua.b@bluehouse.tech',
-    registeredAt: '20 Jan 2026',
-    status: 'active',
-  },
-]
-
-const INITIAL_RECORDS: AttendanceRecord[] = [
-  {
-    id: 'att-001',
-    name: 'Samuel Adekunle',
-    role: 'student',
-    identifier: '24/001',
-    track: 'Full-Stack Web Dev',
-    checkInTime: '09:12 AM',
-    distanceMeters: 14,
-    status: 'on-time',
-  },
-  {
-    id: 'att-002',
-    name: 'Blessing Chioma',
-    role: 'student',
-    identifier: '24/014',
-    track: 'Data Science & AI',
-    checkInTime: '09:15 AM',
-    distanceMeters: 28,
-    status: 'on-time',
-  },
-  {
-    id: 'att-003',
-    name: 'Dr. Michael Olanrewaju',
-    role: 'mentor',
-    identifier: 'BHS/24/002',
-    track: 'Faculty / Lead Instructor',
-    checkInTime: '09:05 AM',
-    distanceMeters: 8,
-    status: 'on-time',
-  },
-  {
-    id: 'att-004',
-    name: 'Fatima Ibrahim',
-    role: 'corper',
-    identifier: 'PL/24A/0842',
-    track: 'UI/UX & Product Design',
-    checkInTime: '09:22 AM',
-    distanceMeters: 35,
-    status: 'on-time',
-  },
-  {
-    id: 'att-005',
-    name: 'Emmanuel Gyang',
-    role: 'student',
-    identifier: '24/032',
-    track: 'Cybersecurity',
-    checkInTime: '10:45 AM',
-    distanceMeters: 42,
-    status: 'late',
-    notes: 'Transport delay reported',
-  },
-  {
-    id: 'att-006',
-    name: 'Aisha Bello',
-    role: 'mentor',
-    identifier: 'BHS/24/007',
-    track: 'Cloud Computing Mentor',
-    checkInTime: '08:55 AM',
-    distanceMeters: 12,
-    status: 'on-time',
-  },
-  {
-    id: 'att-007',
-    name: 'Daniel Pam',
-    role: 'corper',
-    identifier: 'PL/24A/1105',
-    track: 'Software Engineering',
-    checkInTime: '09:30 AM',
-    distanceMeters: 19,
-    status: 'on-time',
-  },
-  {
-    id: 'att-008',
-    name: 'Grace Nwosu',
-    role: 'student',
-    identifier: '24/019',
-    track: 'Full-Stack Web Dev',
-    checkInTime: '09:41 AM',
-    distanceMeters: 22,
-    status: 'on-time',
-  },
-  {
-    id: 'att-009',
-    name: 'Joshua Bitrus',
-    role: 'student',
-    identifier: '24/045',
-    track: 'Data Science & AI',
-    checkInTime: '11:10 AM',
-    distanceMeters: 55,
-    status: 'late',
-  },
-]
-
-const INITIAL_ABSENCES: AbsenceRequest[] = [
-  {
-    id: 'abs-001',
-    name: 'Khadija Usman',
-    role: 'student',
-    identifier: '24/027',
-    reason: 'University continuous assessment test scheduled for today.',
-    submittedAt: 'Today, 08:30 AM',
-    status: 'pending',
-  },
-  {
-    id: 'abs-002',
-    name: 'David Chuwang',
-    role: 'student',
-    identifier: '24/018',
-    reason: 'Medical appointment at Jos University Teaching Hospital.',
-    submittedAt: 'Today, 08:45 AM',
-    status: 'pending',
-  },
-  {
-    id: 'abs-003',
-    name: 'Victor Lar',
-    role: 'corper',
-    identifier: 'PL/24A/0912',
-    reason: 'NYSC Community Development Service (CDS) mandatory meeting.',
-    submittedAt: 'Yesterday, 06:15 PM',
-    status: 'approved',
-  },
-]
+type DashboardPayload = { students: Student[]; records: AttendanceRecord[]; absences: AbsenceRequest[]; setting: { geofenceRadius: number } }
 
 export default function AdminDashboardPage() {
   const router = useRouter()
-
-  // Authentication State
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
   const [isAuthorized, setIsAuthorized] = useState(false)
-
-  // Layout & Navigation State
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<AdminTab>('overview')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-  // Live Records & Students Data
-  const [students, setStudents] = useState<Student[]>(INITIAL_STUDENTS)
-  const [records, setRecords] = useState<AttendanceRecord[]>(INITIAL_RECORDS)
-  const [absences, setAbsences] = useState<AbsenceRequest[]>(INITIAL_ABSENCES)
-
-  // Search & Filter State (Attendance)
+  const [students, setStudents] = useState<Student[]>([])
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
+  const [absences, setAbsences] = useState<AbsenceRequest[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | Role>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | AttendanceStatus>('all')
-
-  // Modals & Settings
-  const [isManualModalOpen, setIsManualModalOpen] = useState(false)
-  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
+  const [addStudentOpen, setAddStudentOpen] = useState(false)
   const [geofenceRadius, setGeofenceRadius] = useState('100')
 
-  // Auth Guard
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isAuth = localStorage.getItem('hub_admin_auth') === 'true'
-      if (!isAuth) {
-        toast.error('Session expired or unauthorized', {
-          description: 'Please sign in with your administrative account.',
-        })
-        router.replace('/admin/login')
-        return
-      }
-
-      setIsAuthorized(true)
-      const userStr = localStorage.getItem('hub_admin_user')
-      if (userStr) {
-        try {
-          setAdminUser(JSON.parse(userStr))
-        } catch {
-          setAdminUser({
-            name: 'Hub Director',
-            email: 'admin@bluehouse.tech',
-            role: 'Super Administrator',
-            avatar: 'BH',
-          })
-        }
-      } else {
-        setAdminUser({
-          name: 'Hub Director',
-          email: 'admin@bluehouse.tech',
-          role: 'Super Administrator',
-          avatar: 'BH',
-        })
-      }
-    }
+  const loadDashboard = useCallback(async (silent = false) => {
+    const response = await fetch('/api/admin/dashboard', { cache: 'no-store' })
+    if (response.status === 401) { router.replace('/admin/login'); return false }
+    if (!response.ok) { if (!silent) toast.error('Unable to load dashboard records'); return false }
+    const data = await response.json() as DashboardPayload
+    setStudents(data.students); setRecords(data.records); setAbsences(data.absences); setGeofenceRadius(String(data.setting.geofenceRadius))
+    return true
   }, [router])
 
-  // Logout Handler
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('hub_admin_auth')
-      localStorage.removeItem('hub_admin_user')
+  useEffect(() => {
+    let active = true
+    const initialise = async () => {
+      const response = await fetch('/api/admin/session', { cache: 'no-store' })
+      if (!response.ok) { router.replace('/admin/login'); return }
+      const { user } = await response.json()
+      if (!active) return
+      setAdminUser(user); setIsAuthorized(true); await loadDashboard()
+      if (active) setLoading(false)
     }
-    toast.success('Logged out successfully')
-    router.replace('/admin/login')
+    initialise(); return () => { active = false }
+  }, [loadDashboard, router])
+
+  useEffect(() => {
+    if (!isAuthorized) return
+    const timer = window.setInterval(() => { loadDashboard(true) }, 15000)
+    const refresh = () => { if (document.visibilityState === 'visible') loadDashboard(true) }
+    window.addEventListener('focus', refresh); document.addEventListener('visibilitychange', refresh)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh) }
+  }, [isAuthorized, loadDashboard])
+
+  const action = async (url: string, options: RequestInit) => {
+    const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json' } })
+    if (response.status === 401) { router.replace('/admin/login'); return false }
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok) { toast.error(body.error || 'Unable to save changes'); return false }
+    await loadDashboard(true); return true
   }
+  const logout = async () => { await fetch('/api/admin/session', { method: 'DELETE' }); router.replace('/admin/login') }
+  const addRecord = async (record: AttendanceRecord) => { if (await action('/api/admin/dashboard', { method: 'POST', body: JSON.stringify(record) })) toast.success(`Check-in recorded for ${record.name}`) }
+  const addStudent = async (student: Student) => { if (await action('/api/admin/participants', { method: 'POST', body: JSON.stringify(student) })) toast.success(`Registered ${student.name}`) }
+  const addBulkStudents = async (newStudents: Student[]) => { const results = await Promise.all(newStudents.map((student) => action('/api/admin/participants', { method: 'POST', body: JSON.stringify(student) }))); if (results.some(Boolean)) toast.success('Participants imported') }
+  const deleteStudent = async (id: string) => { if (await action(`/api/admin/participants?id=${encodeURIComponent(id)}`, { method: 'DELETE' })) toast.success('Participant removed') }
+  const absenceAction = async (absenceId: string, status: 'approved' | 'rejected') => { if (await action('/api/admin/dashboard', { method: 'PATCH', body: JSON.stringify({ absenceId, status }) })) toast.success(`Absence request ${status}`) }
+  const saveSettings = async () => { if (await action('/api/admin/dashboard', { method: 'PATCH', body: JSON.stringify({ geofenceRadius: Number(geofenceRadius) }) })) toast.success('Geofence parameters saved') }
 
-  // Filtered attendance list
-  const filteredRecords = useMemo(() => {
-    return records.filter((r) => {
-      const matchesSearch =
-        r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.identifier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.track.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesRole = roleFilter === 'all' || r.role === roleFilter
-      const matchesStatus = statusFilter === 'all' || r.status === statusFilter
-      return matchesSearch && matchesRole && matchesStatus
-    })
-  }, [records, searchQuery, roleFilter, statusFilter])
+  const filteredRecords = useMemo(() => records.filter((r) => (r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.identifier.toLowerCase().includes(searchQuery.toLowerCase()) || r.track.toLowerCase().includes(searchQuery.toLowerCase())) && (roleFilter === 'all' || r.role === roleFilter) && (statusFilter === 'all' || r.status === statusFilter)), [records, searchQuery, roleFilter, statusFilter])
+  const stats = useMemo(() => { const total = records.length; return { total, students: records.filter((r) => r.role === 'student').length, staff: records.filter((r) => r.role === 'mentor').length, pendingAbsences: absences.filter((a) => a.status === 'pending').length, onTimeRate: total ? Math.round(records.filter((r) => r.status === 'on-time').length / total * 100) : 0 } }, [records, absences])
+  const exportCsv = () => { const content = [['Name', 'Role', 'Identifier', 'Track', 'Check-in Time', 'Distance (m)', 'Status'], ...filteredRecords.map((r) => [r.name, r.role, r.identifier, r.track, r.checkInTime, String(r.distanceMeters), r.status])].map((row) => row.map((value) => `"${value.replaceAll('"', '""')}"`).join(',')).join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' })); link.download = `bluehouse-hub-attendance-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(link.href) }
 
-  // Summary statistics
-  const stats = useMemo(() => {
-    const total = records.length
-    const studentsCount = records.filter((r) => r.role === 'student').length
-    const staff = records.filter((r) => r.role === 'mentor').length
-    const corpers = records.filter((r) => r.role === 'corper').length
-    const pendingAbsences = absences.filter((a) => a.status === 'pending').length
-    const onTimeRate =
-      total > 0 ? Math.round((records.filter((r) => r.status === 'on-time').length / total) * 100) : 100
-
-    return { total, students: studentsCount, staff, corpers, pendingAbsences, onTimeRate }
-  }, [records, absences])
-
-  // Export CSV
-  const handleExportCSV = () => {
-    const headers = ['Name', 'Role', 'Identifier', 'Track', 'Check-in Time', 'Distance (m)', 'Status']
-    const rows = filteredRecords.map((r) => [
-      `"${r.name}"`,
-      `"${r.role}"`,
-      `"${r.identifier}"`,
-      `"${r.track}"`,
-      `"${r.checkInTime}"`,
-      r.distanceMeters,
-      `"${r.status}"`,
-    ])
-    const csvContent =
-      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute(
-      'download',
-      `bluehouse-hub-attendance-${new Date().toISOString().slice(0, 10)}.csv`
-    )
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    toast.success('Attendance CSV exported successfully')
-  }
-
-  // Handle Manual check-in addition
-  const handleAddRecord = (record: AttendanceRecord) => {
-    setRecords((prev) => [record, ...prev])
-  }
-
-  // Handle Add Student (Single)
-  const handleAddStudent = (newStudent: Student) => {
-    setStudents((prev) => [newStudent, ...prev])
-  }
-
-  // Handle Add Student (Bulk)
-  const handleAddBulkStudents = (newStudents: Student[]) => {
-    setStudents((prev) => [...newStudents, ...prev])
-  }
-
-  // Handle Delete Student
-  const handleDeleteStudent = (id: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id))
-  }
-
-  // Handle Absence decision
-  const handleAbsenceAction = (id: string, action: 'approved' | 'rejected') => {
-    setAbsences((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, status: action } : item))
-    )
-    toast.success(`Absence request ${action}`)
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4EFFB]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-600 text-sm font-medium">Verifying Admin Session...</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e8e4fa_0,_#f7f8fd_42%,_#f8f8fc_100%)] text-slate-900 font-sans selection:bg-purple-200 selection:text-purple-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1800px] flex-col">
-        <AdminHeader
-          activeTab={activeTab}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          onOpenManualModal={() => setIsManualModalOpen(true)}
-          onExportCSV={handleExportCSV}
-          adminUser={adminUser}
-          onLogout={handleLogout}
-        />
-
-        <AdminSidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          pendingAbsencesCount={stats.pendingAbsences}
-          totalAttendanceCount={stats.total}
-          totalStudentsCount={students.length}
-          adminUser={adminUser}
-          onLogout={handleLogout}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
-
-        <main className="mx-3 mt-10 flex-1 rounded-t-[28px] border border-[#e4e1ee] bg-white/90 p-4 shadow-[0_-4px_30px_rgba(93,84,140,0.04)] sm:mx-6 sm:p-6 lg:mx-12 lg:mt-12 lg:p-8">
-          {/* Conditional View Rendering based on active tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Top KPI Stat Cards (Only in Overview) */}
-              <StatsOverview stats={stats} onNavigateTab={setActiveTab} />
-
-              <AttendanceTable
-                records={filteredRecords}
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                roleFilter={roleFilter}
-                setRoleFilter={setRoleFilter}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-              />
-              <AnalyticsView />
-            </div>
-          )}
-
-          {activeTab === 'attendance' && (
-            <AttendanceTable
-              records={filteredRecords}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              roleFilter={roleFilter}
-              setRoleFilter={setRoleFilter}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-            />
-          )}
-
-          {activeTab === 'students' && (
-            <StudentsView
-              students={students}
-              onOpenAddModal={() => setIsAddStudentModalOpen(true)}
-              onDeleteStudent={handleDeleteStudent}
-            />
-          )}
-
-          {activeTab === 'absences' && (
-            <AbsenceReports absences={absences} onAbsenceAction={handleAbsenceAction} />
-          )}
-
-          {activeTab === 'analytics' && <AnalyticsView />}
-
-          {activeTab === 'settings' && (
-            <SettingsView
-              geofenceRadius={geofenceRadius}
-              setGeofenceRadius={setGeofenceRadius}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* 4. Manual Attendance Check-in Override Modal */}
-      <ManualCheckinModal
-        isOpen={isManualModalOpen}
-        onClose={() => setIsManualModalOpen(false)}
-        onAddRecord={handleAddRecord}
-      />
-
-      {/* 5. Add Student / Participant Modal (Manual or Bulk CSV with Role Selection) */}
-      <AddStudentModal
-        isOpen={isAddStudentModalOpen}
-        onClose={() => setIsAddStudentModalOpen(false)}
-        onAddStudent={handleAddStudent}
-        onAddBulkStudents={handleAddBulkStudents}
-      />
-    </div>
-  )
+  if (!isAuthorized || loading) return <div className="min-h-screen flex items-center justify-center bg-[#F4EFFB]"><p className="text-slate-600 text-sm font-medium">Loading secure admin dashboard...</p></div>
+  return <div className="min-h-screen bg-[#f7f8fd] text-slate-900"><div className="mx-auto flex min-h-screen w-full max-w-[1800px] flex-col">
+    <AdminHeader activeTab={activeTab} onOpenSidebar={() => setIsSidebarOpen(true)} onOpenManualModal={() => setManualOpen(true)} onExportCSV={exportCsv} adminUser={adminUser} onLogout={logout} />
+    <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingAbsencesCount={stats.pendingAbsences} totalAttendanceCount={stats.total} totalStudentsCount={students.length} adminUser={adminUser} onLogout={logout} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+    <main className="mx-3 mt-10 flex-1 rounded-t-[28px] border border-[#e4e1ee] bg-white/90 p-4 sm:mx-6 sm:p-6 lg:mx-12 lg:mt-12 lg:p-8">
+      {activeTab === 'overview' && <div className="space-y-6"><StatsOverview stats={stats} onNavigateTab={setActiveTab} /><AttendanceTable records={filteredRecords} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter} /><AnalyticsView records={records} students={students} /></div>}
+      {activeTab === 'attendance' && <AttendanceTable records={filteredRecords} searchQuery={searchQuery} setSearchQuery={setSearchQuery} roleFilter={roleFilter} setRoleFilter={setRoleFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />}
+      {activeTab === 'students' && <StudentsView students={students} records={records} onOpenAddModal={() => setAddStudentOpen(true)} onDeleteStudent={deleteStudent} />}
+      {activeTab === 'absences' && <AbsenceReports absences={absences} onAbsenceAction={absenceAction} />}
+      {activeTab === 'analytics' && <AnalyticsView records={records} students={students} />}
+      {activeTab === 'settings' && <SettingsView geofenceRadius={geofenceRadius} setGeofenceRadius={setGeofenceRadius} onSave={saveSettings} />}
+    </main></div>
+    <ManualCheckinModal isOpen={manualOpen} onClose={() => setManualOpen(false)} onAddRecord={addRecord} />
+    <AddStudentModal isOpen={addStudentOpen} onClose={() => setAddStudentOpen(false)} onAddStudent={addStudent} onAddBulkStudents={addBulkStudents} />
+  </div>
 }

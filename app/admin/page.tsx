@@ -7,13 +7,9 @@ export default function AdminRootPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if admin is logged in
-    const isAuth = typeof window !== 'undefined' && localStorage.getItem('hub_admin_auth') === 'true'
-    if (isAuth) {
-      router.replace('/admin/dashboard')
-    } else {
-      router.replace('/admin/login')
-    }
+    fetch('/api/admin/session', { cache: 'no-store' }).then((response) => {
+      router.replace(response.ok ? '/admin/dashboard' : '/admin/login')
+    })
   }, [router])
 
   return (

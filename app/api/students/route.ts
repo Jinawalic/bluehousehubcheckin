@@ -20,16 +20,19 @@ export async function POST(request: Request) {
     if (existingEmail) {
       return NextResponse.json({ error: 'A participant with this email already exists.' }, { status: 409 })
     }
+    const existingName = await prisma.participant.findFirst({ where: { name: { equals: name, mode: 'insensitive' }, role: 'student' } })
+    if (existingName) {
+      return NextResponse.json({ error: 'A student with this name already exists. Use the registered full name to check in.' }, { status: 409 })
+    }
 
     const participant = await prisma.$transaction(async (transaction) => {
-      const count = await transaction.participant.count({ where: { role: 'student' } })
-      const identifier = `24/${String(count + 1).padStart(3, '0')}`
+      const identifier = name
       return transaction.participant.create({
         data: { name, email, phone, school, track, studentType, months, role: 'student', identifier },
       })
     })
 
-    return NextResponse.json({ id: participant.id, identifier: participant.identifier, name: participant.name }, { status: 201 })
+    return NextResponse.json({ id: participant.id, name: participant.name }, { status: 201 })
   } catch (error) {
     console.error('Student registration failed', error)
     return NextResponse.json({ error: 'Unable to register the student right now.' }, { status: 500 })

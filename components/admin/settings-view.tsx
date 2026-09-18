@@ -2,19 +2,17 @@
 
 import React from 'react'
 import { MapPin, Sliders, CheckCircle, Shield } from 'lucide-react'
-import { toast } from 'sonner'
 
 interface SettingsViewProps {
   geofenceRadius: string
   setGeofenceRadius: (radius: string) => void
+  onSave: () => Promise<void>
 }
 
-export function SettingsView({ geofenceRadius, setGeofenceRadius }: SettingsViewProps) {
-  const handleSave = (e: React.FormEvent) => {
+export function SettingsView({ geofenceRadius, setGeofenceRadius, onSave }: SettingsViewProps) {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success('Geofence parameters saved', {
-      description: `Active tolerance radius set to ${geofenceRadius} meters.`,
-    })
+    await onSave()
   }
 
   return (

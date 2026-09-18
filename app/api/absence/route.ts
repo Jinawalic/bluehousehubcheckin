@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-const ROLE_VALUES = ['student', 'mentor', 'corper'] as const
+const ROLE_VALUES = ['student', 'mentor'] as const
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +11,13 @@ export async function POST(request: Request) {
     const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
     const role = body.role
 
-    if (!name || !identifier || !reason || !ROLE_VALUES.includes(role)) {
-      return NextResponse.json({ error: 'Name, identifier, role, and reason are required.' }, { status: 400 })
+    if (!name || (role === 'mentor' && !identifier) || !reason || !ROLE_VALUES.includes(role)) {
+      return NextResponse.json({ error: 'Name, role, and reason are required; mentors also need a staff ID.' }, { status: 400 })
     }
 
-    const participant = await prisma.participant.findUnique({ where: { identifier } })
+    const participant = role === 'student'
+      ? await prisma.participant.findFirst({ where: { name: { equals: name, mode: 'insensitive' }, role: 'student' } })
+      : await prisma.participant.findUnique({ where: { identifier } })
     if (participant && participant.role !== role) {
       return NextResponse.json({ error: 'The identifier does not match the selected role.' }, { status: 400 })
     }
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     const absence = await prisma.absenceRequest.create({
       data: {
         participantId: participant?.id,
-        identifier,
+        identifier: participant?.identifier ?? identifier ?? name,
         name,
         role,
         reason,

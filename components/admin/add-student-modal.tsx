@@ -61,15 +61,14 @@ export function AddStudentModal({
   const handleRoleChange = (newRole: Role) => {
     setRole(newRole)
     if (newRole === 'student') setIdentifier('')
-    else if (newRole === 'mentor') setIdentifier('BHS/')
-    else if (newRole === 'corper') setIdentifier('PL/')
+    else setIdentifier('BHS/')
   }
 
   // Handle Manual Submit
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !identifier.trim()) {
-      toast.error('Please enter student name and ID.')
+    if (!name.trim() || (role === 'mentor' && !identifier.trim())) {
+      toast.error(role === 'student' ? 'Please enter the student name.' : 'Please enter the mentor name and staff ID.')
       return
     }
 
@@ -77,7 +76,7 @@ export function AddStudentModal({
       id: `std-${Date.now()}`,
       name: name.trim(),
       role,
-      identifier: identifier.trim().toUpperCase(),
+      identifier: role === 'student' ? name.trim() : identifier.trim().toUpperCase(),
       track: track.trim() || 'General Tech',
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
@@ -89,7 +88,7 @@ export function AddStudentModal({
     toast.success(`Registered ${newStudent.name} successfully`)
     // Reset
     setName('')
-    setIdentifier(role === 'student' ? '' : role === 'mentor' ? 'BHS/' : 'PL/')
+    setIdentifier(role === 'student' ? '' : 'BHS/')
     setEmail('')
     setPhone('')
     onClose()
@@ -118,9 +117,7 @@ export function AddStudentModal({
         const studentId = parts[1].toUpperCase()
         const studentRole = (parts[2]?.toLowerCase() === 'mentor' || parts[2]?.toLowerCase() === 'staff'
           ? 'mentor'
-          : parts[2]?.toLowerCase() === 'corper'
-            ? 'corper'
-            : bulkRole) as Role
+          : bulkRole) as Role
         const studentTrack = parts[3] || 'Full-Stack Web Dev'
         const studentEmail = parts[4] || ''
 
@@ -177,7 +174,7 @@ export function AddStudentModal({
 
   // Download Sample Template CSV
   const handleDownloadTemplate = () => {
-    const template = 'Full Name,Identifier,Role,Track,Email\nJohn Doe,24/101,student,Full-Stack Web Development,john@bluehouse.tech\nJane Smith,BHS/24/008,mentor,Data Science & AI,jane@bluehouse.tech\nPeter Obi,PL/24A/2030,corper,Cybersecurity,peter@bluehouse.tech'
+    const template = 'Full Name,Identifier,Role,Track,Email\nJohn Doe,John Doe,student,Full-Stack Web Development,john@bluehouse.tech\nJane Smith,BHS/24/008,mentor,Data Science & AI,jane@bluehouse.tech'
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -200,7 +197,7 @@ export function AddStudentModal({
       id: `std-${Date.now()}-${i}`,
       name: r.name || 'Participant',
       role: r.role || bulkRole,
-      identifier: r.identifier || `${bulkRole === 'student' ? 'BHH' : bulkRole === 'mentor' ? 'BHS' : 'PL'}/24/${100 + i}`,
+      identifier: r.identifier || r.name || `BHS/24/${100 + i}`,
       track: r.track || 'Full-Stack Web Dev',
       email: r.email,
       registeredAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -227,7 +224,7 @@ export function AddStudentModal({
               <h2 className="font-serif font-bold text-xl text-slate-900 leading-tight">
                 Add Participants
               </h2>
-              <p className="text-slate-500 text-xs">Register new students, staff mentors, or NYSC corpers</p>
+              <p className="text-slate-500 text-xs">Register new students and staff mentors</p>
             </div>
           </div>
           <button
@@ -277,7 +274,7 @@ export function AddStudentModal({
               {/* Role Selector */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-700">Select Role</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => handleRoleChange('student')}
@@ -300,17 +297,6 @@ export function AddStudentModal({
                   >
                     Staff / Mentor (BHS/)
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRoleChange('corper')}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                      role === 'corper'
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    NYSC Corper (PL/)
-                  </button>
                 </div>
               </div>
 
@@ -329,13 +315,13 @@ export function AddStudentModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">ID / Identifier *</label>
+                  <label className="block text-xs font-semibold text-slate-700">{role === 'student' ? 'Check-in name' : 'Staff ID *'}</label>
                   <input
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="24/..."
-                    required
+                    placeholder={role === 'student' ? 'Uses full name above' : 'BHS/...'}
+                    required={role === 'mentor'}
                     className="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white text-sm font-mono text-slate-900 rounded-xl border border-slate-200 focus:border-purple-500 outline-none uppercase"
                   />
                 </div>
@@ -413,7 +399,6 @@ export function AddStudentModal({
                 >
                   <option value="student">Student</option>
                   <option value="mentor">Staff / Mentor (BHS/)</option>
-                  <option value="corper">NYSC Corper (PL/)</option>
                 </select>
               </div>
 
