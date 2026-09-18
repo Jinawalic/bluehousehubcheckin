@@ -255,8 +255,10 @@ export function StudentsView({
                       <button
                         type="button"
                         onClick={() => {
-                          onDeleteStudent(student.id)
-                          toast.success(`Removed ${student.name}`)
+                          const confirmed = window.confirm(`Are you sure you want to remove participant "${student.name}"? This action cannot be undone.`)
+                          if (confirmed) {
+                            onDeleteStudent(student.id)
+                          }
                         }}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         title="Remove participant"

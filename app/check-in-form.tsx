@@ -24,11 +24,13 @@ import {
 } from '@/components/student/student-registration-modal'
 import { StudentCheckInSuccess } from '@/components/student/student-checkin-success'
 
-// Check-in window (Nigerian time, server clock)
-const OPEN_HOUR = 9
-const CLOSE_HOUR = 18
-
-const HUB_COORDS = { latitude: 9.88452647721506, longitude: 8.876546119960212 }
+const DEFAULT_HUB_SETTINGS = {
+  openHour: 9,
+  closeHour: 18,
+  latitude: 9.88452647721506,
+  longitude: 8.876546119960212,
+  geofenceRadius: 200,
+}
 
 type Role = 'student' | 'mentor'
 type StudentRegistrationType = 'private' | 'intern'
@@ -45,10 +47,10 @@ interface RoleConfig {
 const ROLE_CONFIGS: Record<Role, RoleConfig> = {
   student: {
     name: 'Student',
-    label: 'Full name',
+    label: 'Full name or ID',
     prefix: '',
-    placeholder: 'e.g. Adaeze Okafor',
-    hint: 'Enter your full registered name',
+    placeholder: 'e.g. Adaeze Okafor or BHS-2026-0001',
+    hint: 'Enter your registered name or ID',
     example: 'Adaeze Okafor',
   },
   mentor: {
@@ -81,15 +83,24 @@ function formatCountdown(seconds: number) {
   return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${sec}s` : `${sec}s`
 }
 
+function formatHour(hour: number) {
+  const period = hour >= 12 ? 'PM' : 'AM'
+  const h = hour % 12 || 12
+  return `${h}:00 ${period}`
+}
+
 export function CheckInForm() {
   const [currentRole, setCurrentRole] = useState<Role>('student')
   const [identifier, setIdentifier] = useState('')
   const [isCheckingIn, setIsCheckingIn] = useState(false)
   const [isWithinWindow, setIsWithinWindow] = useState(false)
-  const [timeStatusText, setTimeStatusText] = useState('Check-in is closed for today (closes 6:00 PM).')
+  const [timeStatusText, setTimeStatusText] = useState('Loading check-in hours...')
   const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false)
   const [isMentorsModalOpen, setIsMentorsModalOpen] = useState(false)
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
+
+  // Dynamic hub settings loaded from database
+  const [hubSettings, setHubSettings] = useState(DEFAULT_HUB_SETTINGS)
 
   // Absence form state
   const [absenceIdentifier, setAbsenceIdentifier] = useState('')
@@ -98,31 +109,61 @@ export function CheckInForm() {
   const [absenceReason, setAbsenceReason] = useState('')
   const [isSubmittingAbsence, setIsSubmittingAbsence] = useState(false)
 
+  // Load dynamic hub hours & settings from API
+  useEffect(() => {
+    let isMounted = true
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/check-in')
+        if (res.ok) {
+          const data = await res.json()
+          if (isMounted) {
+            setHubSettings({
+              openHour: typeof data.openHour === 'number' ? data.openHour : 9,
+              closeHour: typeof data.closeHour === 'number' ? data.closeHour : 18,
+              latitude: typeof data.latitude === 'number' ? data.latitude : DEFAULT_HUB_SETTINGS.latitude,
+              longitude: typeof data.longitude === 'number' ? data.longitude : DEFAULT_HUB_SETTINGS.longitude,
+              geofenceRadius: typeof data.geofenceRadius === 'number' ? data.geofenceRadius : DEFAULT_HUB_SETTINGS.geofenceRadius,
+            })
+          }
+        }
+      } catch {
+        // Fallback remains active
+      }
+    }
+    fetchSettings()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   useEffect(() => {
     const checkWindow = () => {
       const now = Date.now()
       const secondsOfDay = lagosMinutesOfDay(now)
-      const openSeconds = OPEN_HOUR * 3600
-      const closeSeconds = CLOSE_HOUR * 3600
+      const openSeconds = hubSettings.openHour * 3600
+      const closeSeconds = hubSettings.closeHour * 3600
+      const openTimeLabel = formatHour(hubSettings.openHour)
+      const closeTimeLabel = formatHour(hubSettings.closeHour)
 
       if (secondsOfDay >= openSeconds && secondsOfDay < closeSeconds) {
         setIsWithinWindow(true)
         const remaining = closeSeconds - secondsOfDay
-        setTimeStatusText(`Check-in is open (${formatCountdown(remaining)} remaining, closes 6:00 PM).`)
+        setTimeStatusText(`Check-in is open (${formatCountdown(remaining)} remaining, closes ${closeTimeLabel}).`)
       } else if (secondsOfDay < openSeconds) {
         setIsWithinWindow(false)
         const untilOpen = openSeconds - secondsOfDay
-        setTimeStatusText(`Check-in opens in ${formatCountdown(untilOpen)} (at 9:00 AM).`)
+        setTimeStatusText(`Check-in opens in ${formatCountdown(untilOpen)} (at ${openTimeLabel}).`)
       } else {
         setIsWithinWindow(false)
-        setTimeStatusText('Check-in is closed for today (closes 6:00 PM).')
+        setTimeStatusText(`Check-in is closed for today (closes ${closeTimeLabel}).`)
       }
     }
 
     checkWindow()
     const interval = setInterval(checkWindow, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [hubSettings.openHour, hubSettings.closeHour])
 
   const handleRoleChange = (newRole: Role) => {
     setCurrentRole(newRole)
@@ -130,8 +171,11 @@ export function CheckInForm() {
   }
 
   const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value
-    if (currentRole === 'student') { setIdentifier(val); return }
+    const val = e.target.value
+    if (currentRole === 'student') {
+      setIdentifier(val)
+      return
+    }
     const prefix = ROLE_CONFIGS[currentRole].prefix
     const rawPrefix = prefix.replace('/', '')
 
@@ -141,14 +185,12 @@ export function CheckInForm() {
       return
     }
 
-    if (val.startsWith(prefix)) {
+    if (val.toUpperCase().startsWith(prefix.toUpperCase())) {
       setIdentifier(val)
-    } else if (val.startsWith(rawPrefix)) {
-      // Allow users to enter identifiers with or without separators.
+    } else if (val.toUpperCase().startsWith(rawPrefix.toUpperCase())) {
       const rest = val.slice(rawPrefix.length).replace(/^[/-]/, '')
       setIdentifier(prefix + rest)
     } else {
-      // If user typed without prefix, keep prefix at the front
       setIdentifier(prefix + val.replace(/^[/-]/, ''))
     }
   }
@@ -160,8 +202,10 @@ export function CheckInForm() {
 
   const [isCheckedIn, setIsCheckedIn] = useState(false)
   const [checkedInStudent, setCheckedInStudent] = useState({
+    attendanceId: '',
     name: 'Student',
     track: 'Web Development',
+    checkInTime: '',
   })
 
   const handleRegistrationSubmit = async (values: StudentRegistrationFormValues) => {
@@ -174,7 +218,7 @@ export function CheckInForm() {
     if (!response.ok) throw new Error(result.error ?? 'Registration failed.')
 
     toast.success(`${values.name} registered successfully.`, {
-      description: `Student ID: ${result.identifier}. Use your full registered name for daily check-in.`,
+      description: `Student ID: ${result.identifier}. Use your full registered name or ID for daily check-in.`,
     })
   }
 
@@ -182,9 +226,9 @@ export function CheckInForm() {
     if (e) e.preventDefault()
 
     const prefix = ROLE_CONFIGS[currentRole].prefix
-    const trimmed = currentRole === 'student' ? identifier.trim() : identifier.trim().toUpperCase()
+    const trimmed = identifier.trim()
 
-    if (!trimmed || trimmed === prefix) {
+    if (!trimmed || (currentRole === 'mentor' && trimmed.toUpperCase() === prefix.toUpperCase())) {
       toast.error(`Please enter your ${ROLE_CONFIGS[currentRole].label}.`, {
         description: `Format example: ${ROLE_CONFIGS[currentRole].example}`,
       })
@@ -216,16 +260,28 @@ export function CheckInForm() {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Check-in failed.')
 
+      // Staff (mentors) must not submit work; return directly to check-in page with confirmation
+      if (currentRole === 'mentor' || result.role === 'mentor') {
+        toast.success(`Check-in successful! Verified ${result.name}.`, {
+          description: `Staff attendance recorded at ${result.checkInTime}. Have a productive day!`,
+        })
+        setIdentifier(ROLE_CONFIGS.mentor.prefix)
+        setIsCheckingIn(false)
+        return
+      }
+
+      // Students navigate to optional task submission screen
       setCheckedInStudent({
+        attendanceId: result.id || '',
         name: result.name,
-        track: result.track,
+        track: result.track || 'Hub Student',
+        checkInTime: result.checkInTime || '',
       })
       setIsCheckedIn(true)
       toast.success(`Check-in successful! Verified ${result.name}.`, {
-        description: `Role: ${ROLE_CONFIGS[currentRole].name.toUpperCase()} • Time: ${result.checkInTime}`,
+        description: `Track: ${result.track} • Time: ${result.checkInTime}`,
       })
-      // Reset to prefix
-      setIdentifier(currentRole === 'mentor' ? prefix : '')
+      setIdentifier('')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to submit check-in. Please try again.')
     } finally {
@@ -274,8 +330,11 @@ export function CheckInForm() {
   if (isCheckedIn) {
     return (
       <StudentCheckInSuccess
+        attendanceId={checkedInStudent.attendanceId}
         studentName={checkedInStudent.name}
         studentTrack={checkedInStudent.track}
+        checkInTime={checkedInStudent.checkInTime}
+        onBackToHome={() => setIsCheckedIn(false)}
       />
     )
   }
@@ -417,8 +476,7 @@ export function CheckInForm() {
                   value={identifier}
                   onChange={handleIdentifierChange}
                   placeholder={currentConfig.placeholder}
-                  required
-                  autoCapitalize="characters"
+                  autoCapitalize={currentRole === 'mentor' ? 'characters' : 'words'}
                   autoComplete="off"
                   spellCheck="false"
                   className="w-full rounded-2xl border border-[#E2DFE9] bg-white px-4 py-3 sm:py-3.5 text-slate-900 placeholder:text-slate-400 font-medium tracking-wide text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"

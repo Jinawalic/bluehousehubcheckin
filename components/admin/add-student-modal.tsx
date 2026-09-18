@@ -72,11 +72,17 @@ export function AddStudentModal({
       return
     }
 
+    const trimmedName = name.trim()
+    const trimmedIdentifier = identifier.trim()
+    const finalIdentifier = role === 'student'
+      ? (trimmedIdentifier ? trimmedIdentifier.toUpperCase() : trimmedName)
+      : trimmedIdentifier.toUpperCase()
+
     const newStudent: Student = {
       id: `std-${Date.now()}`,
-      name: name.trim(),
+      name: trimmedName,
       role,
-      identifier: role === 'student' ? name.trim() : identifier.trim().toUpperCase(),
+      identifier: finalIdentifier,
       track: track.trim() || 'General Tech',
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
