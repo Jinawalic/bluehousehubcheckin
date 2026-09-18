@@ -174,7 +174,7 @@ export function CheckInForm() {
     if (!response.ok) throw new Error(result.error ?? 'Registration failed.')
 
     toast.success(`${values.name} registered successfully.`, {
-      description: 'Use your full registered name for daily check-in.',
+      description: `Student ID: ${result.identifier}. Use your full registered name for daily check-in.`,
     })
   }
 
