@@ -27,8 +27,15 @@ export async function POST(request: Request) {
     }
 
     const participant = await prisma.$transaction(async (transaction) => {
-      const count = await transaction.participant.count({ where: { role: 'student' } })
-      const identifier = `24/${String(count + 1).padStart(3, '0')}`
+      const students = await transaction.participant.findMany({
+        where: { role: 'student' },
+        select: { identifier: true },
+      })
+      const highestIdentifier = students.reduce((highest, student) => {
+        const match = student.identifier.match(/^24\/(\d+)$/)
+        return match ? Math.max(highest, Number(match[1])) : highest
+      }, 0)
+      const identifier = `24/${String(highestIdentifier + 1).padStart(3, '0')}`
       return transaction.participant.create({
         data: { name, email, phone, school, track, studentType, months, role: 'student', identifier },
       })
