@@ -26,6 +26,15 @@ interface AttendanceTableProps {
   onDeleteRecord?: (id: string) => Promise<void>
 }
 
+function formatDayLabel(date?: string) {
+  if (!date) return 'Unknown date'
+  const d = new Date(`${date}T12:00:00`)
+  if (isNaN(d.getTime())) return date
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date())
+  const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return date === today ? `Today — ${label}` : label
+}
+
 export function AttendanceTable({
   records,
   searchQuery,
@@ -132,8 +141,19 @@ export function AttendanceTable({
                   </td>
                 </tr>
               ) : (
-                records.map((record) => (
-                  <tr key={record.id} className="hover:bg-purple-50/30 transition-colors">
+                records.map((record, index) => (
+                  <React.Fragment key={record.id}>
+                  {(index === 0 || records[index - 1].date !== record.date) && (
+                    <tr className="bg-slate-100/80">
+                      <td colSpan={onDeleteRecord ? 8 : 7} className="py-2 px-4 sm:px-6 text-xs font-bold text-slate-700">
+                        {formatDayLabel(record.date)}
+                        <span className="ml-2 font-medium text-slate-500">
+                          ({records.filter((r) => r.date === record.date).length} check-ins)
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="hover:bg-purple-50/30 transition-colors">
                     <td className="py-3.5 px-4 sm:px-6">
                       <div className="font-semibold text-slate-900">{record.name}</div>
                       <div className="text-[11px] text-slate-400 md:hidden">{record.track}</div>
@@ -198,6 +218,7 @@ export function AttendanceTable({
                       </td>
                     )}
                   </tr>
+                  </React.Fragment>
                 ))
               )}
             </tbody>
