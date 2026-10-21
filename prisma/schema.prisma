@@ -43,6 +43,7 @@ model Attendance {
   checkInTime    String // formatted time e.g. "09:12 AM"
   date           String // YYYY-MM-DD e.g. "2026-09-01"
   timestamp      DateTime     @default(now())
+  checkedOutAt   DateTime?
   notes          String?
   createdAt      DateTime     @default(now())
 

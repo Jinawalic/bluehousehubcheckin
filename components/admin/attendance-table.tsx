@@ -45,6 +45,11 @@ export function AttendanceTable({
   setStatusFilter,
   onDeleteRecord,
 }: AttendanceTableProps) {
+  const today = React.useMemo(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date()), [])
+  const [selectedDate, setSelectedDate] = React.useState<string>(today)
+  const [showAllDays, setShowAllDays] = React.useState(false)
+  const allRecords = records
+  records = showAllDays ? allRecords : allRecords.filter((r) => r.date === selectedDate)
   const hasActiveFilters = searchQuery !== '' || roleFilter !== 'all' || statusFilter !== 'all'
 
   const handleClearFilters = () => {
@@ -79,6 +84,24 @@ export function AttendanceTable({
 
         {/* Filters Group */}
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="date"
+            value={selectedDate}
+            max={today}
+            disabled={showAllDays}
+            onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+            className="px-3 py-2 bg-slate-50 text-xs font-medium text-slate-700 rounded-xl border border-slate-200 outline-none disabled:opacity-50"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setShowAllDays((v) => !v)
+              setSelectedDate(today)
+            }}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 cursor-pointer"
+          >
+            {showAllDays ? 'Show today only' : 'Show all days'}
+          </button>
           {/* Role Filter */}
           <select
             value={roleFilter}
@@ -137,7 +160,7 @@ export function AttendanceTable({
                 <tr>
                   <td colSpan={onDeleteRecord ? 8 : 7} className="py-12 text-center text-slate-400">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm font-medium">No check-in records found matching your filters.</p>
+                    <p className="text-sm font-medium">{showAllDays ? 'No check-in records found matching your filters.' : `No check-ins recorded for ${formatDayLabel(selectedDate)}.`}</p>
                   </td>
                 </tr>
               ) : (

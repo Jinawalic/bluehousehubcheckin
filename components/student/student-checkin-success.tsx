@@ -1,46 +1,100 @@
 'use client'
 
-import { Clock3, Share2, CheckCircle2, Sparkles, ArrowLeft, Send } from 'lucide-react'
+import { Clock3, CheckCircle2, ArrowLeft, Send, LogOut } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { WeeklyPerformanceCard } from './weekly-performance-card'
 
 interface StudentCheckInSuccessProps {
   attendanceId?: string
+  participantId?: string
   studentName?: string
   studentTrack?: string
   checkInTime?: string
+  checkedInAt?: string
   onBackToHome?: () => void
 }
 
-const fridayCard = {
-  title: 'Follow & share Techfest Jos on X',
-  handle: 'https://x.com/techfestjosh',
-  reward: '+20 pts',
-  description: 'Follow and repost, then paste the link to your repost as proof.',
+const SESSION_MS = 5 * 60 * 60 * 1000
+
+function formatClock(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':')
 }
 
 export function StudentCheckInSuccess({
   attendanceId,
+  participantId,
   studentName = 'Student',
   studentTrack = 'Web Development',
   checkInTime,
+  checkedInAt,
   onBackToHome,
 }: StudentCheckInSuccessProps) {
   const [taskLink, setTaskLink] = useState('')
   const [taskReason, setTaskReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [minutesElapsed, setMinutesElapsed] = useState(0)
+  const [reportRefresh, setReportRefresh] = useState(0)
 
-  // Live timer for elapsed time since checkin
+  const startMs = useMemo(() => {
+    const parsed = checkedInAt ? Date.parse(checkedInAt) : NaN
+    return Number.isNaN(parsed) ? Date.now() : Math.min(parsed, Date.now())
+  }, [checkedInAt])
+  const [now, setNow] = useState(() => Date.now())
+
+  // Derived from the real check-in timestamp each tick, so it never drifts or resets
   useEffect(() => {
-    const timer = setInterval(() => {
-      setMinutesElapsed((prev) => prev + 1)
-    }, 60000)
+    const timer = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  const isFriday = useMemo(() => new Date().getDay() === 5, [])
+  const elapsedMs = Math.max(0, now - startMs)
+  const remainingMs = Math.max(0, SESSION_MS - elapsedMs)
+  const progress = Math.min(100, (elapsedMs / SESSION_MS) * 100)
+  const sessionComplete = remainingMs === 0
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+
+  const handleCheckOut = async () => {
+    if (!window.confirm('Check out for today? You will not be able to check in again today.')) return
+    setIsCheckingOut(true)
+    try {
+      if (attendanceId) {
+        const res = await fetch('/api/check-in', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attendanceId, action: 'checkout' }),
+        })
+        if (!res.ok) throw new Error()
+      }
+      toast.success('You have been checked out. See you next time!')
+      onBackToHome?.()
+    } catch {
+      toast.error('Unable to check out right now. Please try again.')
+    } finally {
+      setIsCheckingOut(false)
+    }
+  }
+
+  // Auto check-out at 4pm Lagos time
+  const lagosHour = Number(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', hour12: false }).format(now),
+  ) % 24
+  useEffect(() => {
+    if (lagosHour >= 16) {
+      toast.info('It is 4:00 PM, you have been automatically checked out.')
+      onBackToHome?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lagosHour >= 16])
+
+  const isFriday = useMemo(
+    () => new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Lagos', weekday: 'short' }).format(new Date()) === 'Fri',
+    [],
+  )
 
   const handleSubmit = async () => {
     if (!taskLink.trim() && !taskReason.trim()) {
@@ -62,19 +116,13 @@ export function StudentCheckInSuccess({
         })
       }
       setIsSubmitted(true)
+      setReportRefresh((n) => n + 1)
       toast.success('Task details submitted successfully!')
     } catch {
       toast.error('Unable to save task submission right now.')
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `I just completed the Techfest Jos Friday task. Link: ${fridayCard.handle}`,
-    )
-    window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -93,10 +141,21 @@ export function StudentCheckInSuccess({
             </button>
           ) : <div />}
 
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Verified Present
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCheckOut}
+              disabled={isCheckingOut}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition cursor-pointer disabled:opacity-50"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{isCheckingOut ? 'Checking out...' : 'Check out'}</span>
+            </button>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Verified Present
+            </span>
+          </div>
         </div>
 
         <div className="text-center">
@@ -114,14 +173,17 @@ export function StudentCheckInSuccess({
 
         {/* Dynamic Time in Hub */}
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Hub Active Session</p>
-          <div className="mt-2 text-3xl font-black tracking-tight text-slate-900">
-            {minutesElapsed < 60
-              ? `${minutesElapsed}m elapsed`
-              : `${Math.floor(minutesElapsed / 60)}h ${minutesElapsed % 60}m elapsed`}
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            {sessionComplete ? 'Session complete' : 'Time left in 5-hour session'}
+          </p>
+          <div className="mt-2 text-4xl font-black tracking-tight text-slate-900 tabular-nums">
+            {formatClock(remainingMs)}
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Standard learning session: 5 hours. Keep building!
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Counting from your check-in{checkInTime ? ` at ${checkInTime}` : ''}. Elapsed {formatClock(Math.min(elapsedMs, SESSION_MS))}.
           </p>
         </div>
 
@@ -198,36 +260,8 @@ export function StudentCheckInSuccess({
         </div>
 
         {/* Friday Special Card */}
-        {isFriday && (
-          <div className="rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-fuchsia-50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-violet-600" />
-                <h3 className="text-base font-bold text-slate-900">{fridayCard.title}</h3>
-              </div>
-              <span className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-700">
-                {fridayCard.reward}
-              </span>
-            </div>
-
-            <p className="mt-2 text-xs sm:text-sm text-slate-600">{fridayCard.description}</p>
-
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input
-                readOnly
-                value={fridayCard.handle}
-                className="flex-1 rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-700 outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleShareWhatsApp}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-violet-700 cursor-pointer"
-              >
-                <Share2 className="h-4 w-4" />
-                Share on WhatsApp
-              </button>
-            </div>
-          </div>
+        {isFriday && participantId && (
+          <WeeklyPerformanceCard participantId={participantId} refreshKey={reportRefresh} />
         )}
       </div>
     </main>

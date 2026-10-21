@@ -206,6 +206,8 @@ export function CheckInForm() {
     name: 'Student',
     track: 'Web Development',
     checkInTime: '',
+    participantId: '',
+    checkedInAt: '',
   })
 
   const handleRegistrationSubmit = async (values: StudentRegistrationFormValues) => {
@@ -262,8 +264,10 @@ export function CheckInForm() {
 
       // Staff (mentors) must not submit work; return directly to check-in page with confirmation
       if (currentRole === 'mentor' || result.role === 'mentor') {
-        toast.success(`Check-in successful! Verified ${result.name}.`, {
-          description: `Staff attendance recorded at ${result.checkInTime}. Have a productive day!`,
+        toast.success(result.resumed ? `${result.name} is already checked in today.` : `Check-in successful! Verified ${result.name}.`, {
+          description: result.resumed
+            ? `Checked in at ${result.checkInTime}.`
+            : `Staff attendance recorded at ${result.checkInTime}. Have a productive day!`,
         })
         setIdentifier(ROLE_CONFIGS.mentor.prefix)
         setIsCheckingIn(false)
@@ -276,11 +280,17 @@ export function CheckInForm() {
         name: result.name,
         track: result.track || 'Hub Student',
         checkInTime: result.checkInTime || '',
+        participantId: result.participantId || '',
+        checkedInAt: result.timestamp || new Date().toISOString(),
       })
       setIsCheckedIn(true)
-      toast.success(`Check-in successful! Verified ${result.name}.`, {
-        description: `Track: ${result.track} • Time: ${result.checkInTime}`,
-      })
+      if (result.resumed) {
+        toast.success(`Welcome back, ${result.name}!`, { description: `You're still checked in (since ${result.checkInTime}).` })
+      } else {
+        toast.success(`Check-in successful! Verified ${result.name}.`, {
+          description: `Track: ${result.track} • Time: ${result.checkInTime}`,
+        })
+      }
       setIdentifier('')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to submit check-in. Please try again.')
@@ -334,6 +344,8 @@ export function CheckInForm() {
         studentName={checkedInStudent.name}
         studentTrack={checkedInStudent.track}
         checkInTime={checkedInStudent.checkInTime}
+        checkedInAt={checkedInStudent.checkedInAt}
+        participantId={checkedInStudent.participantId}
         onBackToHome={() => setIsCheckedIn(false)}
       />
     )

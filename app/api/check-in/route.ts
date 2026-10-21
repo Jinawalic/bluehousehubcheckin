@@ -5,6 +5,8 @@ const ROLE_VALUES = ['student', 'mentor'] as const
 
 type Role = (typeof ROLE_VALUES)[number]
 
+const AUTO_CHECKOUT_HOUR = 16
+
 function isRole(value: unknown): value is Role {
   return typeof value === 'string' && ROLE_VALUES.includes(value as Role)
 }
@@ -115,18 +117,31 @@ export async function POST(request: Request) {
     }
 
     const { hour, date, checkInTime } = lagosDateAndTime()
+
+    const existingAttendance = await prisma.attendance.findFirst({
+      where: { participantId: participant.id, date },
+    })
+    if (existingAttendance) {
+      if (existingAttendance.checkedOutAt || hour >= AUTO_CHECKOUT_HOUR) {
+        return NextResponse.json({ error: 'You already checked out today. See you tomorrow!' }, { status: 409 })
+      }
+      return NextResponse.json({
+        id: existingAttendance.id,
+        participantId: participant.id,
+        name: participant.name,
+        track: participant.track,
+        identifier: participant.identifier,
+        role: participant.role,
+        checkInTime: existingAttendance.checkInTime,
+        timestamp: existingAttendance.timestamp.toISOString(),
+        resumed: true,
+      })
+    }
+
     const openHour = setting?.openHour ?? 9
     const closeHour = setting?.closeHour ?? 18
     if (hour < openHour || hour >= closeHour) {
       return NextResponse.json({ error: `Check-in is open from ${openHour}:00 to ${closeHour}:00 Lagos time.` }, { status: 400 })
-    }
-
-    const existingAttendance = await prisma.attendance.findFirst({
-      where: { participantId: participant.id, date },
-      select: { id: true },
-    })
-    if (existingAttendance) {
-      return NextResponse.json({ error: 'This participant has already checked in today.' }, { status: 409 })
     }
 
     const hubLatitude = setting?.latitude ?? 9.88452647721506
@@ -158,11 +173,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       id: attendance.id,
+      participantId: participant.id,
       name: participant.name,
       track: participant.track,
       identifier: participant.identifier,
       role: participant.role,
       checkInTime,
+      timestamp: attendance.timestamp.toISOString(),
     }, { status: 201 })
   } catch (error) {
     console.error('Check-in failed', error)
@@ -173,10 +190,18 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json()
-    const { attendanceId, taskLink, taskReason } = body
+    const { attendanceId, taskLink, taskReason, action } = body
 
     if (!attendanceId || typeof attendanceId !== 'string') {
       return NextResponse.json({ error: 'Attendance ID is required.' }, { status: 400 })
+    }
+
+    if (action === 'checkout') {
+      const current = await prisma.attendance.findUnique({ where: { id: attendanceId }, select: { checkedOutAt: true } })
+      if (!current) return NextResponse.json({ error: 'Attendance record not found.' }, { status: 404 })
+      if (current.checkedOutAt) return NextResponse.json({ ok: true, checkedOutAt: current.checkedOutAt })
+      const updated = await prisma.attendance.update({ where: { id: attendanceId }, data: { checkedOutAt: new Date() } })
+      return NextResponse.json({ ok: true, checkedOutAt: updated.checkedOutAt })
     }
 
     const cleanLink = typeof taskLink === 'string' ? taskLink.trim() : ''
