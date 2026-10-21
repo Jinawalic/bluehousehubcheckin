@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock3, CheckCircle2, ArrowLeft, Send } from 'lucide-react'
+import { Clock3, CheckCircle2, ArrowLeft, Send, LogOut } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { WeeklyPerformanceCard } from './weekly-performance-card'
@@ -56,6 +56,40 @@ export function StudentCheckInSuccess({
   const remainingMs = Math.max(0, SESSION_MS - elapsedMs)
   const progress = Math.min(100, (elapsedMs / SESSION_MS) * 100)
   const sessionComplete = remainingMs === 0
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
+
+  const handleCheckOut = async () => {
+    if (!window.confirm('Check out for today? You will not be able to check in again today.')) return
+    setIsCheckingOut(true)
+    try {
+      if (attendanceId) {
+        const res = await fetch('/api/check-in', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attendanceId, action: 'checkout' }),
+        })
+        if (!res.ok) throw new Error()
+      }
+      toast.success('You have been checked out. See you next time!')
+      onBackToHome?.()
+    } catch {
+      toast.error('Unable to check out right now. Please try again.')
+    } finally {
+      setIsCheckingOut(false)
+    }
+  }
+
+  // Auto check-out at 4pm Lagos time
+  const lagosHour = Number(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', hour12: false }).format(now),
+  ) % 24
+  useEffect(() => {
+    if (lagosHour >= 16) {
+      toast.info('It is 4:00 PM, you have been automatically checked out.')
+      onBackToHome?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lagosHour >= 16])
 
   const isFriday = useMemo(
     () => new Intl.DateTimeFormat('en-US', { timeZone: 'Africa/Lagos', weekday: 'short' }).format(new Date()) === 'Fri',
@@ -107,10 +141,21 @@ export function StudentCheckInSuccess({
             </button>
           ) : <div />}
 
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Verified Present
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCheckOut}
+              disabled={isCheckingOut}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition cursor-pointer disabled:opacity-50"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>{isCheckingOut ? 'Checking out...' : 'Check out'}</span>
+            </button>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Verified Present
+            </span>
+          </div>
         </div>
 
         <div className="text-center">
