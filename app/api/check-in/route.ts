@@ -158,11 +158,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       id: attendance.id,
+      participantId: participant.id,
       name: participant.name,
       track: participant.track,
       identifier: participant.identifier,
       role: participant.role,
       checkInTime,
+      timestamp: attendance.timestamp.toISOString(),
     }, { status: 201 })
   } catch (error) {
     console.error('Check-in failed', error)

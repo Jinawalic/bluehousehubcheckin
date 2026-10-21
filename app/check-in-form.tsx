@@ -206,6 +206,8 @@ export function CheckInForm() {
     name: 'Student',
     track: 'Web Development',
     checkInTime: '',
+    participantId: '',
+    checkedInAt: '',
   })
 
   const handleRegistrationSubmit = async (values: StudentRegistrationFormValues) => {
@@ -276,6 +278,8 @@ export function CheckInForm() {
         name: result.name,
         track: result.track || 'Hub Student',
         checkInTime: result.checkInTime || '',
+        participantId: result.participantId || '',
+        checkedInAt: result.timestamp || new Date().toISOString(),
       })
       setIsCheckedIn(true)
       toast.success(`Check-in successful! Verified ${result.name}.`, {
@@ -334,6 +338,8 @@ export function CheckInForm() {
         studentName={checkedInStudent.name}
         studentTrack={checkedInStudent.track}
         checkInTime={checkedInStudent.checkInTime}
+        checkedInAt={checkedInStudent.checkedInAt}
+        participantId={checkedInStudent.participantId}
         onBackToHome={() => setIsCheckedIn(false)}
       />
     )
