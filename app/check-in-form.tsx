@@ -18,6 +18,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { HubScene } from '@/components/student/hub-scene'
 import {
   StudentRegistrationModal,
   type StudentRegistrationFormValues,
@@ -352,32 +353,34 @@ export function CheckInForm() {
   }
 
   return (
-    <main className="relative min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 sm:py-12 overflow-hidden bg-[#F4EFFB] selection:bg-purple-200 selection:text-purple-900 font-sans">
-      {/* Ambient background soft glow orbs */}
+    <main className="relative min-h-screen w-full flex flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-9 overflow-hidden bg-[#F3F7FC] selection:bg-blue-200 selection:text-blue-950 font-sans">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-purple-200/50 via-pink-100/30 to-transparent blur-3xl rounded-full"
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-blue-200/50 via-sky-100/30 to-transparent blur-3xl rounded-full"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-20 -right-20 w-[400px] h-[400px] bg-purple-200/40 blur-3xl rounded-full"
+        className="pointer-events-none absolute -bottom-20 -right-20 w-[400px] h-[400px] bg-sky-200/40 blur-3xl rounded-full"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/3 -left-24 w-[350px] h-[350px] bg-pink-200/30 blur-3xl rounded-full"
+        className="pointer-events-none absolute top-1/3 -left-24 w-[350px] h-[350px] bg-indigo-200/30 blur-3xl rounded-full"
       />
 
-      <div className="relative z-10 w-full max-w-[580px] flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-[1180px] flex flex-col items-center">
         {/* Top Header Bar */}
-        <header className="w-full flex items-center justify-between gap-2 mb-6 sm:mb-9 px-1 sm:px-2">
+        <header className="w-full flex items-center justify-between gap-2 mb-5 sm:mb-7 px-1 sm:px-2">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-2.5 sm:gap-3 select-none shrink-0">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-[14px] bg-gradient-to-tr from-[#9835EA] via-[#BF25D1] to-[#EB4899] flex items-center justify-center shadow-[0_4px_14px_rgba(180,50,220,0.3)] transition-transform hover:scale-105">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-[14px] bg-gradient-to-tr from-[#12336F] via-[#2455A2] to-[#57BBD0] flex items-center justify-center shadow-[0_4px_14px_rgba(26,76,145,0.24)] transition-transform hover:scale-105">
               <ShieldCheck className="w-4.5 h-4.5 sm:w-6 sm:h-6 text-white stroke-[2.2]" />
             </div>
-            <span className="font-serif font-black text-lg sm:text-[22px] tracking-tight text-slate-900">
-              Hub Attendance
-            </span>
+            <div>
+              <span className="block font-serif font-black text-lg sm:text-[22px] tracking-tight text-slate-900 leading-tight">
+                Bluehouse Hub
+              </span>
+              <span className="hidden sm:block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Daily attendance</span>
+            </div>
           </div>
 
           {/* Right Header Navigation Actions */}
@@ -405,8 +408,36 @@ export function CheckInForm() {
           </div>
         </header>
 
-        {/* Main Check-in Card */}
-        <section className="w-full bg-white rounded-[28px] sm:rounded-[32px] p-6 sm:p-10 md:p-11 shadow-[0_20px_60px_-15px_rgba(130,90,200,0.09),0_1px_3px_rgba(0,0,0,0.02)] border border-white/90 transition-all">
+        <div className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)] lg:gap-7">
+          <aside className="relative flex min-h-[310px] flex-col overflow-hidden rounded-[28px] bg-gradient-to-br from-[#10295C] via-[#163C7C] to-[#175789] p-6 text-white shadow-[0_24px_70px_-26px_rgba(13,48,105,0.55)] sm:min-h-[380px] sm:rounded-[32px] sm:p-9 lg:min-h-[620px] lg:p-10">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full border border-white/10" />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-5 -top-9 h-44 w-44 rounded-full border border-white/10" />
+            <div className="relative z-10 flex items-center gap-2 self-start rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-blue-50 backdrop-blur-sm">
+              <span className={`h-2 w-2 rounded-full ${isWithinWindow ? 'bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.9)]' : 'bg-amber-300'}`} />
+              {isWithinWindow ? 'CHECK-IN IS OPEN' : 'BLUEHOUSE LEARNING HUB'}
+            </div>
+            <div className="relative z-10 mt-6 max-w-md sm:mt-8">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Welcome to your hub</p>
+              <h2 className="font-serif text-[32px] font-bold leading-[1.08] tracking-tight sm:text-[42px] lg:text-[48px]">
+                Make today
+                <br />
+                count.
+              </h2>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-blue-100/80 sm:text-[15px]">
+                Show up, settle in, and take the next step in your learning journey.
+              </p>
+            </div>
+            <div className="relative mx-auto mt-auto w-full max-w-[520px] pt-1 sm:pt-0">
+              <HubScene />
+            </div>
+            <div className="relative z-10 mt-0 flex items-center gap-2 text-xs font-medium text-blue-100/75">
+              <MapPin className="h-3.5 w-3.5 text-cyan-200" />
+              Bluehouse Hub · Learning together
+            </div>
+          </aside>
+
+          {/* Main Check-in Card */}
+          <section className="w-full rounded-[28px] border border-white bg-white p-6 shadow-[0_20px_60px_-20px_rgba(25,63,121,0.17),0_1px_3px_rgba(0,0,0,0.03)] transition-all sm:rounded-[32px] sm:p-8 md:p-9">
           {/* Card Header Title & Subtitle */}
           <div className="mb-6 sm:mb-7">
             <h1 className="font-serif font-black text-[32px] sm:text-[38px] md:text-[40px] text-slate-950 tracking-tight leading-[1.15] mb-2.5">
@@ -423,7 +454,7 @@ export function CheckInForm() {
             <button
               type="button"
               onClick={() => setIsRegistrationModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5" />
               Register student
@@ -433,7 +464,7 @@ export function CheckInForm() {
           <div
             role="tablist"
             aria-label="Select role"
-            className="bg-[#F1EFF7] p-1.5 rounded-2xl flex items-center gap-1 mb-6 sm:mb-7"
+            className="bg-[#F1F5FA] p-1.5 rounded-2xl flex items-center gap-1 mb-6 sm:mb-7"
           >
             {/* Student */}
             <button
@@ -477,7 +508,7 @@ export function CheckInForm() {
                 >
                   {currentConfig.label} (as registered)
                 </label>
-                <span className="text-[11px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md">
+                <span className="text-[11px] font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
                   {currentConfig.hint}
                 </span>
               </div>
@@ -491,7 +522,7 @@ export function CheckInForm() {
                   autoCapitalize={currentRole === 'mentor' ? 'characters' : 'words'}
                   autoComplete="off"
                   spellCheck="false"
-                  className="w-full rounded-2xl border border-[#E2DFE9] bg-white px-4 py-3 sm:py-3.5 text-slate-900 placeholder:text-slate-400 font-medium tracking-wide text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
+                  className="w-full rounded-2xl border border-[#D9E2EF] bg-white px-4 py-3 sm:py-3.5 text-slate-900 placeholder:text-slate-400 font-medium tracking-wide text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]"
                 />
               </div>
             </div>
@@ -500,7 +531,7 @@ export function CheckInForm() {
             <button
               type="submit"
               disabled={isCheckingIn}
-              className="w-full bg-gradient-to-r from-[#9C75F7] via-[#E673B8] to-[#FDA98F] hover:brightness-105 active:scale-[0.99] text-white font-medium text-sm sm:text-base py-3.5 sm:py-4 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-[0_10px_25px_-5px_rgba(230,115,184,0.35)] transition-all cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none select-none"
+              className="w-full bg-gradient-to-r from-[#173F85] via-[#2366A8] to-[#2699A7] hover:brightness-105 active:scale-[0.99] text-white font-semibold text-sm sm:text-base py-3.5 sm:py-4 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-[0_10px_25px_-5px_rgba(32,100,160,0.34)] transition-all cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none select-none"
             >
               {isCheckingIn ? (
                 <>
@@ -524,6 +555,7 @@ export function CheckInForm() {
             </div>
           </form>
         </section>
+        </div>
       </div>
 
       <StudentRegistrationModal
