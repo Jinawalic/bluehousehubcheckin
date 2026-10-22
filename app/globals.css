@@ -38,3 +38,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@keyframes hub-scene-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes hub-scene-pin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.hub-scene-float {
+  animation: hub-scene-float 6s ease-in-out infinite;
+}
+
+.hub-scene-pin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hub-scene-pin 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub-scene-float,
+  .hub-scene-pin {
+    animation: none;
+  }
+}
