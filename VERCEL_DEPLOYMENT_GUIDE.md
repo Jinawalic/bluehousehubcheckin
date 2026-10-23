@@ -59,3 +59,10 @@ Vercel will automatically detect **Next.js**. The project is already configured 
 - [x] Production build (`npm run build`): **All 14 static & dynamic routes compiled successfully**
 - [x] Case-insensitivity verified for Linux filesystems
 - [x] Automatic Prisma Client generation configured for Vercel builds (`vercel-build`)
+
+## 6. Progressive Web App
+
+The app includes an installable web app manifest and service worker. Deploy it over
+HTTPS (as Vercel does) so supported browsers can offer installation. The service
+worker shows a basic offline page when a navigation fails; check-ins, admin pages,
+and API requests still require a network connection and are not cached.
