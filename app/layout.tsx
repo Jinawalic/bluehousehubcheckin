@@ -1,11 +1,26 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Providers } from './providers'
+import { PwaRegistration } from './pwa-registration'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Hub Attendance — Daily Check-in',
   description:
     'Daily geolocation-verified attendance check-in for Bluehouse technologies',
+  applicationName: 'Hub Attendance',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Hub Attendance',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
+  },
   openGraph: {
     title: 'Hub Attendance — Daily Check-in',
     description:
@@ -20,6 +35,12 @@ export const metadata: Metadata = {
     description:
       'Daily geolocation-verified attendance check-in for Bluehouse technologies',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#243e9e',
 }
 
 export default function RootLayout({
@@ -42,6 +63,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <PwaRegistration />
         <Providers>{children}</Providers>
       </body>
     </html>
