@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isScheduledDay, scheduleLabel, trackGroup } from '@/lib/track-schedule'
 
 const ATTENDANCE_WEIGHT = 40
 const PUNCTUALITY_WEIGHT = 30
 const TASK_WEIGHT = 30
-const WEEK_DAYS = 5
+const WEEK_DAYS = 3
+
+function weekDates(monday: string) {
+  const base = new Date(`${monday}T00:00:00Z`).getTime()
+  return Array.from({ length: 5 }, (_, i) => new Date(base + i * 86400000).toISOString().slice(0, 10))
+}
 
 function lagosToday() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date())
@@ -55,14 +61,17 @@ export async function GET(request: Request) {
 
     const scored = students.map((st) => {
       const s = stats.get(st.id)
-      const days = s?.days.size ?? 0
-      const onTime = s?.onTime.size ?? 0
-      const tasks = s?.tasks.size ?? 0
+      const group = trackGroup(st.track)
+      const expectedDates = new Set(group ? weekDates(start).filter((d) => isScheduledDay(group, d)) : [])
+      const countScheduled = (set?: Set<string>) => (set ? [...set].filter((d) => !group || expectedDates.has(d)).length : 0)
+      const days = countScheduled(s?.days)
+      const onTime = countScheduled(s?.onTime)
+      const tasks = countScheduled(s?.tasks)
       const attendanceScore = (Math.min(days, WEEK_DAYS) / WEEK_DAYS) * ATTENDANCE_WEIGHT
       const punctualityScore = (Math.min(onTime, WEEK_DAYS) / WEEK_DAYS) * PUNCTUALITY_WEIGHT
       const taskScore = (Math.min(tasks, WEEK_DAYS) / WEEK_DAYS) * TASK_WEIGHT
-      const avgMinutes = days > 0 ? (s?.minutes ?? 0) / days : 24 * 60
-      return { ...st, days, onTime, tasks, attendanceScore, punctualityScore, taskScore, total: attendanceScore + punctualityScore + taskScore, avgMinutes }
+      const avgMinutes = days > 0 ? (s?.minutes ?? 0) / (s?.days.size || 1) : 24 * 60
+      return { ...st, group, days, onTime, tasks, attendanceScore, punctualityScore, taskScore, total: attendanceScore + punctualityScore + taskScore, avgMinutes }
     })
 
     // Strict ordering so no two students share a position: score, earlier average arrival, name
@@ -82,6 +91,7 @@ export async function GET(request: Request) {
       onTimeDays: me.onTime,
       tasksSubmitted: me.tasks,
       weekDays: WEEK_DAYS,
+      schedule: me.group ? scheduleLabel(me.group, true) : '',
       attendanceScore: Math.round(me.attendanceScore),
       punctualityScore: Math.round(me.punctualityScore),
       taskScore: Math.round(me.taskScore),
