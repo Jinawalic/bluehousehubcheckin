@@ -15,6 +15,7 @@ interface WeeklyReport {
   onTimeDays: number
   tasksSubmitted: number
   weekDays: number
+  schedule?: string
   attendanceScore: number
   punctualityScore: number
   taskScore: number
@@ -91,6 +92,10 @@ function drawCard(canvas: HTMLCanvasElement, r: WeeklyReport, logo: HTMLImageEle
   ctx.fillStyle = LIGHT
   fitText(ctx, r.track, W - 160, 38, '600')
   ctx.fillText(r.track, W / 2, 605)
+  if (r.schedule) {
+    ctx.font = '600 28px Arial, sans-serif'
+    ctx.fillText(`Hub days: ${r.schedule}`, W / 2, 640)
+  }
 
   // Position + total
   ctx.fillStyle = '#ffffff'

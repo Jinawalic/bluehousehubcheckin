@@ -16,6 +16,7 @@ export const HUB_TRACKS = [
   'Graphics Design',
   'Product Design',
   'Project Management',
+  'Prompt Engineering',
   'Social Media Management',
   'Software Engineering',
   'UI/UX Design',

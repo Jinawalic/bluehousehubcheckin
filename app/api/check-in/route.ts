@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { isScheduledDay, scheduleLabel, trackGroup } from '@/lib/track-schedule'
 
 const ROLE_VALUES = ['student', 'mentor'] as const
 
@@ -136,6 +137,22 @@ export async function POST(request: Request) {
         timestamp: existingAttendance.timestamp.toISOString(),
         resumed: true,
       })
+    }
+
+    const group = trackGroup(participant.track)
+    if (!group) {
+      if (participant.role === 'student') {
+        console.error(`Check-in blocked: unrecognised track "${participant.track}" for ${participant.identifier}`)
+        return NextResponse.json(
+          { error: 'Your track is not recognised, so you cannot check in. Please contact the hub admin to fix your registration.' },
+          { status: 403 },
+        )
+      }
+    } else if (!isScheduledDay(group, date)) {
+      return NextResponse.json(
+        { error: `You can't check in today because it is not your day. ${participant.track} days are ${scheduleLabel(group)}.` },
+        { status: 403 },
+      )
     }
 
     const openHour = setting?.openHour ?? 9
